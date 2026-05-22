@@ -1,0 +1,68 @@
+@import "tailwindcss";
+body{
+ font-family:'Poppins',sans-serif;
+ background:#F3F4F6;
+}
+
+.btn-primary{
+ background:#0F2747;
+ color:white;
+ padding:12px 20px;
+ border-radius:14px;
+ font-weight:500;
+ transition:0.2s;
+}
+
+.btn-primary:hover{
+ background:#14345F;
+}
+.loader-circle{
+ position:relative;
+ display:inline-block;
+}
+
+.loader-circle span{
+ position:absolute;
+ top:50%;
+ left:50%;
+ width:8%;
+ height:8%;
+ background:var(--dot-color);
+ border-radius:50%;
+ transform-origin:0 calc(var(--size,40px));
+ animation:dotFade 1.2s linear infinite;
+ filter:drop-shadow(0 0 6px var(--dot-color));
+}
+
+/* POSITION DOTS AROUND CIRCLE */
+.loader-circle span{
+ transform:
+  rotate(calc(var(--i)*30deg))
+  translate(calc(var(--size,40px) * -0.45));
+}
+
+/* FADE TRAIL EFFECT */
+.loader-circle span{
+ animation-delay:calc(var(--i)*0.1s);
+}
+
+/* ANIMATION */
+@keyframes dotFade{
+ 0%{
+  opacity:1;
+  transform:
+   rotate(calc(var(--i)*30deg))
+   translate(calc(var(--size,40px) * -0.45))
+   scale(1.1);
+ }
+
+ 100%{
+  opacity:0.1;
+  transform:
+   rotate(calc(var(--i)*30deg))
+   translate(calc(var(--size,40px) * -0.45))
+   scale(0.6);
+ }
+}
+
+
