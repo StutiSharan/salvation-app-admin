@@ -168,13 +168,16 @@ exports.bulkSalaryFolderUpload=async(req,res)=>{
 			}
 
 			try{
-				const uploadResult=await uploadToS3(file,{
-					module:"employee",
-					documentType:"salarySlip",
-					name:employee.name||employee.fullName||employeeId,
-					id:employeeId
-				})
+			console.time(`S3-${file.originalname}`)
 
+const uploadResult=await uploadToS3(file,{
+	module:"employee",
+	documentType:"salarySlip",
+	name:employee.name||employee.fullName||employeeId,
+	id:employeeId
+})
+
+console.timeEnd(`S3-${file.originalname}`)
 				successUpdates.push({
 					updateOne:{
 						filter:{employeeId},
