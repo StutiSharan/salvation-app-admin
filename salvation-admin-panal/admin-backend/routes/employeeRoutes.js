@@ -8,6 +8,7 @@ const c=require("../controllers/employeeController")
 router.post("/",auth,c.createEmployee)
 router.get("/",auth,c.getEmployees)
 router.post("/generate",auth,c.generateEmployee)
+router.delete("/delete/:id",auth,c.deleteEmployee)
 
 /* ================= BULK SALARY SLIP FOLDER ================= */
 router.post(

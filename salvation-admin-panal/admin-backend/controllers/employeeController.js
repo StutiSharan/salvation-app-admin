@@ -1,6 +1,7 @@
 const Employee=require("../models/Employee")
 const generateId=require("../utils/generateEmployeeId")
 const uploadToS3 =require("../utils/s3Upload")
+const LeaveEmployee=require("../models/LeaveEmployee")
 
 
 exports.generateEmployee=async(req,res)=>{
@@ -108,6 +109,40 @@ exports.getEmployees=async(req,res)=>{
 //  }
 // }
 
+exports.deleteEmployee=async(req,res)=>{
+	try{
+		const {id}=req.params
+		const {reason,deletedBy}=req.body
+
+		const employee=await Employee.findById(id)
+
+		if(!employee){
+			return res.status(404).json({
+				success:false,
+				message:"Employee not found"
+			})
+		}
+
+		await LeaveEmployee.create({
+			employeeData:employee.toObject(),
+			reason:reason||"Left organization",
+			deletedBy:deletedBy||"Admin"
+		})
+
+		await Employee.findByIdAndDelete(id)
+
+		res.json({
+			success:true,
+			message:"Employee deleted and moved to leave employees collection"
+		})
+	}catch(err){
+		console.error(err)
+		res.status(500).json({
+			success:false,
+			message:"Server error"
+		})
+	}
+}
 exports.bulkSalaryFolderUpload=async(req,res)=>{
 	try{
 		const {month,year}=req.body
@@ -123,7 +158,7 @@ exports.bulkSalaryFolderUpload=async(req,res)=>{
 		const files=req.files
 		const failed=[]
 		const successUpdates=[]
-		const CONCURRENCY=10
+		const CONCURRENCY=4
 
 		const employeeIds=[
 			...new Set(
@@ -204,7 +239,7 @@ console.timeEnd(`S3-${file.originalname}`)
 		}
 
 		if(successUpdates.length){
-			await Employee.bulkWrite(successUpdates)
+		await Employee.bulkWrite(successUpdates,{ordered:false})
 		}
 
 		res.json({

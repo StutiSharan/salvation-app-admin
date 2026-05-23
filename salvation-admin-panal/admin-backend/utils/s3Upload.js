@@ -45,7 +45,7 @@
 //  }
 // }
 
-const {PutObjectCommand}=require("@aws-sdk/client-s3")
+const {Upload}=require("@aws-sdk/lib-storage")
 const path=require("path")
 const s3=require("./s3Client")
 
@@ -56,19 +56,24 @@ module.exports=async(file,{module,documentType,name,id})=>{
 
 	const ext=path.extname(file.originalname)
 	const safeName=(name||id||"employee").replace(/\s+/g,"_")
-	const fileName=`${safeName}_${id}_${documentType}${ext}`
+	const unique=Date.now()
+	const fileName=`${safeName}_${id}_${documentType}_${unique}${ext}`
 	const key=`upload/${module}/${documentType}/${fileName}`
 
-	console.time(`PutObject-${file.originalname}`)
+	const upload=new Upload({
+		client:s3,
+		params:{
+			Bucket:process.env.AWS_S3_BUCKET,
+			Key:key,
+			Body:file.buffer,
+			ContentType:file.mimetype
+		},
+		queueSize:4,
+		partSize:1024*1024*5,
+		leavePartsOnError:false
+	})
 
-	await s3.send(new PutObjectCommand({
-		Bucket:process.env.AWS_S3_BUCKET,
-		Key:key,
-		Body:file.buffer,
-		ContentType:file.mimetype
-	}))
-
-	console.timeEnd(`PutObject-${file.originalname}`)
+	await upload.done()
 
 	return{
 		key,
