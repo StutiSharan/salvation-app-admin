@@ -128,8 +128,7 @@ const formatValue=(value,key)=>{
 	}
 
 	return(
-		<div className="p-6 space-y-5">
-
+<div className="p-6 space-y-5 origin-top-left scale-[0.8] w-[125%]">
 			{/* ================= HEADER ================= */}
 			<div className="flex justify-between items-center">
 
@@ -173,8 +172,7 @@ const formatValue=(value,key)=>{
 
 function StatCard({icon,label,value}){
 	return(
-		<div className="bg-white rounded-xl p-4 shadow-sm border flex items-center gap-3">
-
+<div className="bg-white rounded-xl p-4 shadow-sm border flex items-center gap-3 scale-[0.9] w-[111.11%]">
 			<div className="w-9 h-9 flex items-center justify-center bg-gray-100 rounded-lg text-[#0F2747]">
 				{icon}
 			</div>

@@ -126,7 +126,7 @@ const newEmployeeLogins=employees.filter(emp=>{
  }
 
  return(
-  <div className="px-4 sm:px-6 lg:px-8 py-6 bg-gray-50 min-h-screen">
+  <div className="px-4 sm:px-6 lg:px-8 py-6 bg-gray-50 min-h-screen" style={{zoom:"0.89"}}>
 
    {/* HEADER */}
    <h1 className="text-xl sm:text-2xl lg:text-3xl font-semibold mb-6 sm:mb-8">

@@ -29,7 +29,7 @@ export default function Layout(){
    </header>
 
    {/* DESKTOP SIDEBAR */}
-   <aside className="hidden lg:block fixed left-0 top-0 h-screen w-64 z-30">
+   <aside className="hidden lg:block fixed left-0 top-0 h-screen w-64">
     <Sidebar/>
    </aside>
 

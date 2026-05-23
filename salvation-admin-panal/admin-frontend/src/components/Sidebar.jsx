@@ -21,7 +21,7 @@ export default function Sidebar({closeMobile}){
  }
 
  return(
-  <div className="w-64 h-full bg-[#0F2747] text-white flex flex-col">
+  <div className="w-64 h-full bg-[#0F2747] text-white flex flex-col"style={{zoom:"0.89"}}>
 
    {/* LOGO */}
    <div className="p-6 border-b border-white/10">
