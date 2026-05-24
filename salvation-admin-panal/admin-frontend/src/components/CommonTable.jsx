@@ -1,40 +1,91 @@
-import {useState,useMemo} from "react"
-
+import {useState,useMemo,useEffect} from "react"
+import axios from "../api/axios"
+import {X} from "lucide-react"
 const CommonTable=({columns,data})=>{
 
  const [search,setSearch]=useState("")
  const [sortKey,setSortKey]=useState("")
  const [sortOrder,setSortOrder]=useState("asc")
-
+const [previewImage,setPreviewImage]=useState(null)
+const [imageLoading,setImageLoading]=useState(false)
  const [showColumnSelector,setShowColumnSelector]=useState(false)
  const [visibleKeys,setVisibleKeys]=useState(columns.map(c=>c.key))
-
+const [thumbUrls,setThumbUrls]=useState({})
+const [thumbLoading,setThumbLoading]=useState({})
+const tableData=Array.isArray(data)?data:[]
  /* ======================================================
     GET ALL BACKEND FIELDS
  ====================================================== */
+useEffect(()=>{
+	const keys=[...new Set(
+	(tableData||[])
+			.map(row=>row.profilePhoto)
+			.filter(Boolean)
+	)]
 
+	keys.forEach(key=>{
+		if(!thumbUrls[key] && !thumbLoading[key]){
+			fetchSignedImage(key)
+		}
+	})
+},[tableData])
  const allDataKeys=useMemo(()=>{
-  if(!data?.length) return []
-  return Object.keys(data[0])
- },[data])
+ if(!tableData?.length) return []
+return Object.keys(tableData[0])
+ },[tableData])
+const fetchSignedImage=async(key)=>{
+	if(!key) return null
 
+	if(thumbUrls[key]) return thumbUrls[key]
+	if(thumbLoading[key]) return null
+
+	try{
+		setThumbLoading(prev=>({...prev,[key]:true}))
+
+		const res=await axios.get(
+			`/documents/signed-url?key=${encodeURIComponent(key)}`
+		)
+
+		const url=res.data.url
+
+		await new Promise((resolve,reject)=>{
+			const img=new Image()
+			img.onload=resolve
+			img.onerror=reject
+			img.src=url
+		})
+
+		setThumbUrls(prev=>({...prev,[key]:url}))
+		return url
+
+	}catch(err){
+		console.log(err)
+		return null
+	}finally{
+		setThumbLoading(prev=>({...prev,[key]:false}))
+	}
+}
  /* ======================================================
     MERGE DEFAULT + BACKEND COLUMNS
  ====================================================== */
 
- const allColumns=useMemo(()=>{
-  const existingKeys=columns.map(c=>c.key)
+const allColumns=useMemo(()=>{
+	const normalizedColumns=columns.map((col,index)=>({
+		...col,
+		key:col.key || `custom_${index}`
+	}))
 
-  const extraCols=allDataKeys
-   .filter(key=>!existingKeys.includes(key))
-   .map(key=>({
-    label:key,
-    key
-   }))
+	const existingKeys=normalizedColumns.map(c=>c.key)
 
-  return [...columns,...extraCols]
- },[columns,allDataKeys])
+	const extraCols=allDataKeys
+		.filter(key=>!existingKeys.includes(key))
+		.map(key=>({
+			label:key,
+			key
+		}))
 
+	return [...normalizedColumns,...extraCols]
+},[columns,allDataKeys])
  /* ======================================================
     ONLY VISIBLE COLUMNS
  ====================================================== */
@@ -45,43 +96,40 @@ const CommonTable=({columns,data})=>{
     FILTER + SORT
  ====================================================== */
 
- const processedData=useMemo(()=>{
+const processedData=useMemo(()=>{
+	const query=search.toLowerCase()
 
-  const query=search.toLowerCase()
+	let filtered=tableData.filter(row=>{
+		return visibleColumns.some(col=>{
+			const value=row[col.key]
+			if(!value) return false
+			return String(value).toLowerCase().includes(query)
+		})
+	})
 
-  let filtered=data.filter(row=>{
-   return visibleColumns.some(col=>{
-    const value=row[col.key]
-    if(!value) return false
-    return String(value).toLowerCase().includes(query)
-   })
-  })
+	if(sortKey){
+		filtered.sort((a,b)=>{
+			let v1=a[sortKey]
+			let v2=b[sortKey]
 
-  if(sortKey){
-   filtered.sort((a,b)=>{
-    let v1=a[sortKey]
-    let v2=b[sortKey]
+			if(sortKey.toLowerCase().includes("date")){
+				v1=new Date(v1)
+				v2=new Date(v2)
+			}
 
-    if(sortKey.toLowerCase().includes("date")){
-     v1=new Date(v1)
-     v2=new Date(v2)
-    }
+			if(typeof v1==="string"){
+				v1=v1.toLowerCase()
+				v2=v2.toLowerCase()
+			}
 
-    if(typeof v1==="string"){
-     v1=v1.toLowerCase()
-     v2=v2.toLowerCase()
-    }
+			if(v1>v2) return sortOrder==="asc"?1:-1
+			if(v1<v2) return sortOrder==="asc"?-1:1
+			return 0
+		})
+	}
 
-    if(v1>v2) return sortOrder==="asc"?1:-1
-    if(v1<v2) return sortOrder==="asc"?-1:1
-    return 0
-   })
-  }
-
-  return filtered
-
- },[data,visibleColumns,search,sortKey,sortOrder])
-
+	return filtered
+},[tableData,visibleColumns,search,sortKey,sortOrder])
  const handleSort=(key)=>{
   if(sortKey===key){
    setSortOrder(prev=>prev==="asc"?"desc":"asc")
@@ -112,24 +160,48 @@ const CommonTable=({columns,data})=>{
   if(value===null || value===undefined) return "-"
 
   /* ===== CHECKIN LOCATION → VIEW MAP ===== */
+if(key==="profilePhoto"){
+	const imgUrl=thumbUrls[value]
+	const loading=thumbLoading[value]
 
-  if(key==="checkinLocation"){
-   if(!value?.latitude || !value?.longitude){
-    return <span className="text-gray-400 text-xs">Not checked in</span>
-   }
+	return(
+		<button
+			onClick={()=>openProfilePreview(value)}
+			className="w-14 h-14 rounded-xl overflow-hidden border bg-gray-100 hover:ring-2 hover:ring-blue-400 flex items-center justify-center"
+			title="Click to preview"
+		>
+			{loading?(
+				<div className="h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"/>
+			):imgUrl?(
+				<img
+					src={imgUrl}
+					alt="Profile"
+					loading="eager"
+					className="w-full h-full object-cover"
+				/>
+			):(
+				<span className="text-[10px] text-gray-400">No Image</span>
+			)}
+		</button>
+	)
+}
+ if(key==="checkinLocation"){
+	if(!value?.latitude || !value?.longitude){
+		return <span className="text-gray-400 text-xs">Not checked in</span>
+	}
 
-   const mapUrl=`https://www.google.com/maps?q=${value.latitude},${value.longitude}`
+	const mapUrl=`https://www.google.com/maps?q=${value.latitude},${value.longitude}`
 
-   return(
-    <button
-     title={value.address || "Open location"}
-     onClick={()=>window.open(mapUrl,"_blank")}
-     className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs hover:bg-blue-700"
-    >
-     View Map
-    </button>
-   )
-  }
+	return(
+		<button
+			title={value.address || `${value.latitude}, ${value.longitude}`}
+			onClick={()=>window.open(mapUrl,"_blank","noopener,noreferrer")}
+			className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs hover:bg-blue-700"
+		>
+			View Map
+		</button>
+	)
+}
 
   /* ===== NORMAL OBJECT ===== */
 
@@ -139,7 +211,28 @@ const CommonTable=({columns,data})=>{
 
   return String(value)
  }
+const openProfilePreview=async(key)=>{
+	if(!key) return
 
+	const cachedUrl=thumbUrls[key]
+
+	if(cachedUrl){
+		setPreviewImage(cachedUrl)
+		return
+	}
+
+	setImageLoading(true)
+
+	const url=await fetchSignedImage(key)
+
+	if(url){
+		setPreviewImage(url)
+	}else{
+		alert("Image preview failed")
+	}
+
+	setImageLoading(false)
+}
  /* ======================================================
     UI
  ====================================================== */
@@ -232,7 +325,7 @@ const CommonTable=({columns,data})=>{
 
      <tbody>
       {processedData.map((row,i)=>(
-       <tr key={i} className="bg-white shadow-sm hover:shadow-md rounded-xl">
+<tr key={row._id || row.employeeId || row.candidateId || i} className="bg-white shadow-sm hover:shadow-md rounded-xl">
         {visibleColumns.map(col=>(
          <td key={col.key} className="px-4 py-3">
           {col.render
@@ -257,7 +350,33 @@ const CommonTable=({columns,data})=>{
     </table>
 
    </div>
+{(previewImage || imageLoading) && (
+	<div className="fixed inset-0 z-[9999] bg-black/70 flex items-center justify-center p-4">
+		<div className="relative bg-white rounded-2xl p-3 max-w-3xl w-full">
+			<button
+				onClick={()=>{
+					setPreviewImage(null)
+					setImageLoading(false)
+				}}
+				className="absolute -top-4 -right-4 bg-white text-gray-700 rounded-full p-2 shadow-lg hover:bg-red-500 hover:text-white"
+			>
+				<X size={22}/>
+			</button>
 
+			{imageLoading?(
+				<div className="h-[400px] flex items-center justify-center">
+					<div className="h-10 w-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"/>
+				</div>
+			):(
+				<img
+					src={previewImage}
+					alt="Preview"
+					className="w-full max-h-[80vh] object-contain rounded-xl"
+				/>
+			)}
+		</div>
+	</div>
+)}
  </div>
  )
 }

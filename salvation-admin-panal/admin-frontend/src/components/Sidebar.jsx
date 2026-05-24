@@ -7,6 +7,8 @@ import {
  LogOut,
   UserPlus2 ,
   File,
+  	UserX
+
 } from "lucide-react"
 
 export default function Sidebar({closeMobile}){
@@ -40,6 +42,7 @@ export default function Sidebar({closeMobile}){
     <MenuItem to="/employees" closeMobile={closeMobile} icon={<Users size={18}/>}>
      Employees
     </MenuItem>
+    
 
     <MenuItem to="/candidates" closeMobile={closeMobile} icon={<UserCheck size={18}/>}>
      Candidates
@@ -51,7 +54,9 @@ export default function Sidebar({closeMobile}){
 >
  Generate Emp ID
 </MenuItem>
-
+<MenuItem to="/leave-employees" closeMobile={closeMobile} icon={<UserX size={18}/>}>
+	Leave Employees
+</MenuItem>
     <MenuItem to="/upload" closeMobile={closeMobile} icon={<Upload size={18}/>}>
      Upload Documents
     </MenuItem>

@@ -30,46 +30,48 @@ const [refreshing,setRefreshing]=useState(false)
 useEffect(()=>{loadEmployees()},[])
 
 /* ================= LOAD EMPLOYEES ================= */
-
 const loadEmployees=async()=>{
- const res=await getEmployees()
- setEmployees(res.data)
+	const res=await getEmployees(1)
+	setEmployees(res.data.data || [])
 }
 
 /* ================= SEARCH ================= */
 
 const handleSearch=()=>{
- const emp=employees.find(e=>e.employeeId===search.trim())
- if(!emp) return toast.error("Employee not found")
- setEmployee(emp)
-}
+	const list=Array.isArray(employees)?employees:[]
 
+	const emp=list.find(
+		e=>e.employeeId?.toLowerCase()===search.trim().toLowerCase()
+	)
+
+	if(!emp) return toast.error("Employee not found")
+	setEmployee(emp)
+}
 /* ================= REFRESH DOCUMENTS ONLY ================= */
 
 const refreshDocuments=async()=>{
- if(!employee) return
+	if(!employee) return
 
- try{
-  setRefreshing(true)
+	try{
+		setRefreshing(true)
 
-  const res=await getEmployees()
-  const updatedEmployees=res.data
-  setEmployees(updatedEmployees)
+		const res=await getEmployees(1)
+		const updatedEmployees=res.data.data || []
+		setEmployees(updatedEmployees)
 
-  const updatedEmployee=updatedEmployees.find(
-   e=>e.employeeId===employee.employeeId
-  )
+		const updatedEmployee=updatedEmployees.find(
+			e=>e.employeeId===employee.employeeId
+		)
 
-  if(updatedEmployee){
-   setEmployee(updatedEmployee)
-   toast.success("Documents refreshed")
-  }
-
- }catch{
-  toast.error("Refresh failed")
- }finally{
-  setRefreshing(false)
- }
+		if(updatedEmployee){
+			setEmployee(updatedEmployee)
+			toast.success("Documents refreshed")
+		}
+	}catch{
+		toast.error("Refresh failed")
+	}finally{
+		setRefreshing(false)
+	}
 }
 
 /* ================= PREVIEW ================= */
@@ -146,9 +148,16 @@ const replaceDoc=async(file,type,docKey,extra={})=>{
 
 return(
 <div className="min-h-screen bg-gray-50 px-3 sm:px-6 py-4 sm:py-6" style={{zoom:"0.85"}}>
-
+<div>
+					<h1 className="text-2xl font-bold text-gray-800 mt-3">
+						Find Employee Documents
+					</h1>
+					<p className="text-gray-500 text-sm">
+						Search documents by Employee ID
+					</p>
+				</div>
 {/* SEARCH */}
-<div className="max-w-2xl mx-auto bg-white shadow rounded-xl p-4 sm:p-6 mb-6">
+<div className="max-w-2xl mx-auto bg-white shadow rounded-xl p-4 sm:p-6 mb-6 mt-10">
 <h2 className="text-lg sm:text-2xl font-semibold mb-4">
 Document Manager
 </h2>

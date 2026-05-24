@@ -6,7 +6,7 @@ import Layout from "./components/Layout"
 import ProtectedRoute from "./components/ProtectedRoute"
 import GenerateEmployee from "./pages/GenerateEmployee"
 import DocumentManager from "./pages/DocumentManager"
-
+import LeaveEmployees from "./pages/LeaveEmployees"
 import Dashboard from "./pages/Dashboard"
 import Employees from "./pages/Employees"
 import Candidates from "./pages/Candidates"
@@ -40,6 +40,7 @@ export default function App(){
 <Route path="/documents" element={<DocumentManager/>}/>
       <Route path="/upload" element={<UploadDocuments/>}/>
       <Route path="/analytics/:type" element={<AnalyticsPage/>}/>
+      <Route path="/leave-employees" element={<LeaveEmployees/>}/>
      </Route>
     </Route>
 

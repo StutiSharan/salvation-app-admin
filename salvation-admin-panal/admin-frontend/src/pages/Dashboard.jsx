@@ -36,18 +36,19 @@ export default function Dashboard(){
 
  useEffect(()=>{ loadData() },[])
 
- const loadData=async()=>{
-  try{
-   const [candRes,empRes]=await Promise.all([
-    getCandidates(),
-    getEmployees()
-   ])
-   setCandidates(candRes.data)
-   setEmployees(empRes.data)
-  }finally{
-   setLoading(false)
-  }
- }
+const loadData=async()=>{
+	try{
+		const [candRes,empRes]=await Promise.all([
+			getCandidates(1),
+			getEmployees(1)
+		])
+
+		setCandidates(candRes.data.data || [])
+		setEmployees(empRes.data.data || [])
+	}finally{
+		setLoading(false)
+	}
+}
 
  if(loading){
   return <Loader fullScreen/>
@@ -126,7 +127,7 @@ const newEmployeeLogins=employees.filter(emp=>{
  }
 
  return(
-  <div className="px-4 sm:px-6 lg:px-8 py-6 bg-gray-50 min-h-screen" style={{zoom:"0.89"}}>
+  <div className="px-4 sm:px-6 lg:px-8 py-6 bg-gray-50 min-h-screen" style={{zoom:"0.82"}}>
 
    {/* HEADER */}
    <h1 className="text-xl sm:text-2xl lg:text-3xl font-semibold mb-6 sm:mb-8">
@@ -226,7 +227,7 @@ function KpiCard({title,value,badge,onClick}){
 
 function ChartCard({title,children}){
  return(
-  <div className="relative bg-white rounded-2xl p-4 sm:p-6 shadow-sm">
+  <div className="relative bg-white rounded-2xl p-4 sm:p-6 shadow-sm"style={{zzom:"0.89"}}>
 
    <span className="absolute top-3 right-3 text-[10px] sm:text-xs bg-blue-500 text-white px-2 sm:px-3 py-1 rounded-full">
     THIS WEEK

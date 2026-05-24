@@ -284,7 +284,7 @@ import {useEffect,useState,useMemo} from "react"
 import axios from "../api/axios"
 import CommonTable from "../components/CommonTable"
 import DocumentViewModal from "../components/EmpDocumentViewModal"
-
+import {ChevronLeft,ChevronRight} from "lucide-react"
 import {
  Users,
  UserCheck,
@@ -311,19 +311,40 @@ export default function Employees(){
  const [deleteReason,setDeleteReason]=useState("")
  const [deleteLoading,setDeleteLoading]=useState(false)
 const [docTitle,setDocTitle]=useState("")
- useEffect(()=>{ fetchEmployees() },[])
+const [page,setPage]=useState(1)
+const [pagination,setPagination]=useState({
+	total:0,
+	page:1,
+	limit:10,
+	totalPages:1,
+	hasNextPage:false,
+	hasPrevPage:false
+})
+useEffect(()=>{
+	fetchEmployees(page)
+},[page])
 
- const fetchEmployees=async()=>{
-  try{
-   setLoading(true)
-   const res=await axios.get("/employees")
-   setEmployees(res.data)
-  }catch(err){
-   console.log(err)
-  }finally{
-   setLoading(false)
-  }
- }
+const fetchEmployees=async(currentPage=page)=>{
+	try{
+		setLoading(true)
+		const res=await axios.get(`/employees?page=${currentPage}`)
+
+		setEmployees(res.data.data || [])
+		setPagination(res.data.pagination || {
+			total:0,
+			page:1,
+			limit:10,
+			totalPages:1,
+			hasNextPage:false,
+			hasPrevPage:false
+		})
+	}catch(err){
+		console.log(err)
+		setEmployees([])
+	}finally{
+		setLoading(false)
+	}
+}
 
  const openDeleteModal=(emp)=>{
   setSelectedEmp(emp)
@@ -419,10 +440,9 @@ const [docTitle,setDocTitle]=useState("")
    render:(row)=><CopyField value={row.mobile}/>
   },
   {label:"Address",key:"address"},
-  {
+{
 	label:"Checkin Location",
-	key:"checkinLocation",
-	render:(row)=>row.checkinLocation?.address || "-"
+	key:"checkinLocation"
 },
   {
    label:"Created",
@@ -521,6 +541,11 @@ const [docTitle,setDocTitle]=useState("")
     <div className="h-[520px] overflow-auto">
      {loading ? <TableSkeleton/> : <CommonTable columns={columns} data={employees}/>}
     </div>
+    <Pagination
+	page={page}
+	pagination={pagination}
+	onPageChange={setPage}
+/>
    </div>
 
    <DocumentViewModal
@@ -648,4 +673,58 @@ function TableSkeleton(){
    ))}
   </div>
  )
+}
+
+function Pagination({page,pagination,onPageChange}){
+	const goToPage=(newPage)=>{
+		if(newPage<1 || newPage>pagination.totalPages) return
+		onPageChange(newPage)
+	}
+
+	return(
+		<div className="px-4 py-3 bg-white flex flex-col sm:flex-row items-center justify-between gap-3">
+			<div className="text-xs text-gray-500">
+				Page <span className="font-semibold text-[#0F2747]">{pagination.page}</span>
+				{" "}of <span className="font-semibold text-[#0F2747]">{pagination.totalPages}</span>
+				{" "}• Total <span className="font-semibold text-[#0F2747]">{pagination.total}</span>
+			</div>
+
+			<div className="flex items-center gap-1">
+				<button
+					onClick={()=>goToPage(page-1)}
+					disabled={!pagination.hasPrevPage}
+					className="h-8 px-2 rounded-lg text-xs flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100"
+				>
+					<ChevronLeft size={15}/>
+					Prev
+				</button>
+
+				{Array.from({length:pagination.totalPages},(_,i)=>i+1)
+					.slice(Math.max(0,page-2),Math.min(pagination.totalPages,page+1))
+					.map(num=>(
+						<button
+							key={num}
+							onClick={()=>goToPage(num)}
+							className={`h-8 w-8 rounded-lg text-xs font-medium ${
+								page===num
+									?"bg-[#0F2747] text-white"
+									:"text-gray-600 hover:bg-gray-100"
+							}`}
+						>
+							{num}
+						</button>
+					))
+				}
+
+				<button
+					onClick={()=>goToPage(page+1)}
+					disabled={!pagination.hasNextPage}
+					className="h-8 px-2 rounded-lg text-xs flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100"
+				>
+					Next
+					<ChevronRight size={15}/>
+				</button>
+			</div>
+		</div>
+	)
 }

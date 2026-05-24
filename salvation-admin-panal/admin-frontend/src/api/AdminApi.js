@@ -22,9 +22,9 @@ export const signupAdmin=(data)=>{
 ==============================
 */
 
-export const getEmployees=()=>{
- if(!tokenCheck()) return
- return axios.get("/employees")
+export const getEmployees=(page=1)=>{
+	if(!tokenCheck()) return
+	return axios.get(`/employees?page=${page}`)
 }
 
 export const createEmployee=(data)=>{
@@ -39,9 +39,9 @@ export const createEmployee=(data)=>{
 ==============================
 */
 
-export const getCandidates=()=>{
- if(!tokenCheck()) return
- return axios.get("/candidates")
+export const getCandidates=(page=1)=>{
+	if(!tokenCheck()) return
+	return axios.get(`/candidates?page=${page}`)
 }
 
 
