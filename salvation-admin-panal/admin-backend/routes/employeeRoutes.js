@@ -9,7 +9,8 @@ router.post("/",auth,c.createEmployee)
 router.get("/",auth,c.getEmployees)
 router.post("/generate",auth,c.generateEmployee)
 router.delete("/delete/:id",auth,c.deleteEmployee)
-
+router.get("/leave",auth,c.getLeaveEmployees)
+router.post("/leave/:id/restore",auth,c.restoreLeaveEmployee)
 /* ================= BULK SALARY SLIP FOLDER ================= */
 router.post(
  "/salary-slip/bulk-folder",

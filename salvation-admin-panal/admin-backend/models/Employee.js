@@ -39,7 +39,13 @@ const EmployeeSchema = new mongoose.Schema(
   profilePhoto:{ type:String, default:"" },
 
   /* ================= LOGIN / OTP ================= */
-  loginMobile:{ type:String, required:true },
+loginMobile:{
+	type:String,
+	required:true,
+	unique:true,
+	index:true
+},
+sessionExpiresAt:{type:Date},
   otp:{ type:String, default:"" },
   otpVerified:{ type:Boolean, default:false },
   loginAt:{ type:Date },
