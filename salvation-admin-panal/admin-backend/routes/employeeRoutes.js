@@ -18,5 +18,10 @@ router.post(
  upload.array("files"),
  c.bulkSalaryFolderUpload
 )
+router.put(
+  "/:id/employment-details",
+  auth,
+  c.updateEmploymentDetails
+)
 
 module.exports=router

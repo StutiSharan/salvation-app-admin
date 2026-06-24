@@ -37,6 +37,20 @@ const EmployeeSchema = new mongoose.Schema(
   mobile:{ type:String, default:"" },
   address:{ type:String, default:"" },
   profilePhoto:{ type:String, default:"" },
+  designation:{
+  type:String,
+  default:""
+},
+
+dateOfJoining:{
+  type:Date,
+  default:null
+},
+
+dateOfBirth:{
+  type:Date,
+  default:null
+},
 
   /* ================= LOGIN / OTP ================= */
 loginMobile:{
@@ -56,6 +70,13 @@ checkinLocation:{
   longitude:{ type:Number },
   address:{ type:String, default:"" },
   checkedInAt:{ type:Date, default:Date.now }
+},
+
+checkoutLocation:{
+  latitude:{ type:Number },
+  longitude:{ type:Number },
+  address:{ type:String, default:"" },
+  checkedOutAt:{ type:Date }
 },
   /* ================= EMPLOYEE SELF UPLOADS ================= */
   employeeUploads:{

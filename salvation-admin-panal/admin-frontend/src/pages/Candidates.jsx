@@ -3,6 +3,7 @@ import {getCandidates} from "../api/AdminApi"
 import axios from "../api/axios"
 import CommonTable from "../components/CommonTable"
 import Loader from "../components/Loader"
+import { exportToExcel } from "../utills/exportToExcel"
 import {RefreshCw,X,Copy,Check,ChevronLeft,ChevronRight} from "lucide-react"
 
 export default function Candidates(){
@@ -10,6 +11,7 @@ export default function Candidates(){
 	const [loading,setLoading]=useState(true)
 	const [error,setError]=useState("")
 	const [page,setPage]=useState(1)
+	const [exporting,setExporting] = useState(false)
 	const [pagination,setPagination]=useState({
 		total:0,
 		page:1,
@@ -28,7 +30,34 @@ export default function Candidates(){
 	useEffect(()=>{
 		fetchCandidates(page)
 	},[page])
+const handleExport = async()=>{
 
+ try{
+
+  setExporting(true)
+
+  exportToExcel(
+   candidates,
+   "Candidates",
+   [
+    "_id",
+    "__v",
+    "resumeFilePath",
+    "aadhaarFilePath"
+   ]
+  )
+
+ }catch(err){
+  console.log(err)
+ }finally{
+
+  setTimeout(()=>{
+   setExporting(false)
+  },500)
+
+ }
+
+}
 	const fetchCandidates=async(currentPage=page)=>{
 		try{
 			setLoading(true)
@@ -136,17 +165,37 @@ export default function Candidates(){
 	return(
 		<div className="p-6 bg-gray-50 min-h-screen" style={{zoom:"0.85"}}>
 			<div className="flex justify-between mb-6">
-				<h1 className="text-2xl font-semibold">Candidates</h1>
 
-				<button
-					onClick={()=>fetchCandidates(page)}
-					disabled={loading}
-					className="flex gap-2 bg-[#0F2747] text-white px-4 py-2 rounded disabled:opacity-50"
-				>
-					<RefreshCw size={16}/>
-					{loading?"Refreshing":"Refresh"}
-				</button>
-			</div>
+  <h1 className="text-2xl font-semibold">
+    Candidates
+  </h1>
+
+  <div className="flex gap-2">
+
+    <button
+      onClick={handleExport}
+      disabled={exporting}
+      className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded disabled:opacity-50"
+    >
+      {exporting
+        ? "Exporting..."
+        : "Export Excel"}
+    </button>
+
+    <button
+      onClick={()=>fetchCandidates(page)}
+      disabled={loading}
+      className="flex items-center gap-2 bg-[#0F2747] text-white px-4 py-2 rounded disabled:opacity-50"
+    >
+      <RefreshCw size={16}/>
+      {loading
+        ? "Refreshing..."
+        : "Refresh"}
+    </button>
+
+  </div>
+
+</div>
 
 			<div className="bg-white rounded shadow">
 				<div className="p-4 border-b text-sm text-gray-500">

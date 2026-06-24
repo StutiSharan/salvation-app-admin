@@ -263,6 +263,38 @@ exports.getLeaveEmployees=async(req,res)=>{
 		})
 	}
 }
+exports.updateEmploymentDetails = async(req,res)=>{
+ try{
+
+  const {
+   designation,
+   dateOfJoining,
+   dateOfBirth
+  } = req.body
+
+  const employee = await Employee.findByIdAndUpdate(
+   req.params.id,
+   {
+    designation,
+    dateOfJoining,
+    dateOfBirth
+   },
+   { new:true }
+  )
+
+  res.json({
+   success:true,
+   employee
+  })
+
+ }catch(err){
+  console.log(err)
+
+  res.status(500).json({
+   message:"Failed to update employee details"
+  })
+ }
+}
 exports.restoreLeaveEmployee=async(req,res)=>{
 	try{
 		const {id}=req.params

@@ -205,11 +205,25 @@ if(key==="profilePhoto"){
 
   /* ===== NORMAL OBJECT ===== */
 
-  if(typeof value==="object"){
-   return JSON.stringify(value)
+if(
+ key==="dateOfJoining" ||
+ key==="dateOfBirth"
+){
+ return new Date(value).toLocaleDateString(
+  "en-GB",
+  {
+   day:"numeric",
+   month:"short",
+   year:"numeric"
   }
+ )
+}
 
-  return String(value)
+if(typeof value==="object"){
+ return JSON.stringify(value)
+}
+
+return String(value)
  }
 const openProfilePreview=async(key)=>{
 	if(!key) return

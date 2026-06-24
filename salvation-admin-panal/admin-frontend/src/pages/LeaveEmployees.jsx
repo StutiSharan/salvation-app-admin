@@ -1,11 +1,12 @@
 import {useEffect,useState} from "react"
 import CommonTable from "../components/CommonTable"
 import {ChevronLeft,ChevronRight} from "lucide-react"
-
+import { exportToExcel } from "../utills/exportToExcel"
 export default function LeaveEmployees(){
 	const [data,setData]=useState([])
 	const [loading,setLoading]=useState(true)
 	const [page,setPage]=useState(1)
+	const [exporting,setExporting] = useState(false)
 	const [pagination,setPagination]=useState({
 		total:0,
 		page:1,
@@ -14,7 +15,29 @@ export default function LeaveEmployees(){
 		hasNextPage:false,
 		hasPrevPage:false
 	})
+const handleExport = async()=>{
 
+ try{
+
+  setExporting(true)
+
+  exportToExcel(
+   tableData,
+   "LeaveEmployees",
+   ["_id"]
+  )
+
+ }catch(err){
+  console.log(err)
+ }finally{
+
+  setTimeout(()=>{
+   setExporting(false)
+  },500)
+
+ }
+
+}
 	const fetchLeaveEmployees=async(currentPage=page)=>{
 		try{
 			setLoading(true)
@@ -116,14 +139,27 @@ export default function LeaveEmployees(){
 
 	return(
 		<div className="p-4 sm:p-6" style={{zoom:"0.89"}}>
-			<div className="mb-6">
-				<h1 className="text-2xl font-semibold text-[#0F2747]">
-					Leave Employees
-				</h1>
-				<p className="text-sm text-gray-500 mt-1">
-					Employees deleted from active employee list
-				</p>
-			</div>
+			<div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+
+	<div>
+		<h1 className="text-2xl font-semibold text-[#0F2747]">
+			Leave Employees
+		</h1>
+
+		<p className="text-sm text-gray-500 mt-1">
+			Employees deleted from active employee list
+		</p>
+	</div>
+
+	<button
+		onClick={handleExport}
+		disabled={exporting}
+		className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg disabled:opacity-50"
+	>
+		{exporting ? "Exporting..." : "Export Excel"}
+	</button>
+
+</div>
 
 			{loading?(
 				<div className="bg-white rounded-xl p-6 text-gray-500">

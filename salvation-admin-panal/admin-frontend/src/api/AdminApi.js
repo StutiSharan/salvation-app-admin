@@ -91,3 +91,11 @@ export const replaceDocument=(formData)=>{
   headers:{ "Content-Type":"multipart/form-data" }
  })
 }
+export const updateEmploymentDetails = async(id,data)=>{
+ await tokenCheck()
+
+ return axios.put(
+  `/employees/${id}/employment-details`,
+  data
+ )
+}
