@@ -63,16 +63,7 @@ export default function Login(){
      {loading ? "Logging in..." : "Login"}
     </button>
 
-    <div className="flex justify-between text-sm mt-4">
-     <Link to="/forgot-password" className="text-indigo-600">
-      Forgot password?
-     </Link>
-
-     <Link to="/signup" className="text-indigo-600">
-      Sign up
-     </Link>
-    </div>
-
+  
    </form>
 
   </div>
