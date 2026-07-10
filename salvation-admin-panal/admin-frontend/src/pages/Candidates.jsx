@@ -8,10 +8,12 @@ import {RefreshCw,X,Copy,Check,ChevronLeft,ChevronRight} from "lucide-react"
 
 export default function Candidates(){
 	const [candidates,setCandidates]=useState([])
+	const [candidateTotal, setCandidateTotal] = useState(0)
 	const [loading,setLoading]=useState(true)
 	const [error,setError]=useState("")
 	const [page,setPage]=useState(1)
 	const [exporting,setExporting] = useState(false)
+	const [search, setSearch] = useState("")
 	const [pagination,setPagination]=useState({
 		total:0,
 		page:1,
@@ -27,9 +29,13 @@ export default function Candidates(){
 	const [previewLoading,setPreviewLoading]=useState(false)
 	const [zoom,setZoom]=useState(false)
 
-	useEffect(()=>{
-		fetchCandidates(page)
-	},[page])
+useEffect(() => {
+  setPage(1)
+}, [search])
+
+useEffect(() => {
+  fetchCandidates(page)
+}, [page, search])
 const handleExport = async()=>{
 
  try{
@@ -58,28 +64,24 @@ const handleExport = async()=>{
  }
 
 }
-	const fetchCandidates=async(currentPage=page)=>{
-		try{
-			setLoading(true)
-			const res=await getCandidates(currentPage)
+	const fetchCandidates = async (
+  currentPage = page,
+  currentSearch = search
+) => {
+  try {
+    setLoading(true)
 
-			setCandidates(res.data.data || [])
-			setPagination(res.data.pagination || {
-				total:0,
-				page:1,
-				limit:10,
-				totalPages:1,
-				hasNextPage:false,
-				hasPrevPage:false
-			})
-		}catch(err){
-			console.error(err)
-			setError("Failed to load candidates")
-		}finally{
-			setLoading(false)
-		}
-	}
+    const res = await getCandidates(currentPage, currentSearch)
 
+    setCandidates(res.data.data || [])
+    setPagination(res.data.pagination)
+  } catch (err) {
+    console.error(err)
+    setError("Failed to load candidates")
+  } finally {
+    setLoading(false)
+  }
+}
 	const openPreview=async(key)=>{
 		if(!key) return
 		try{
@@ -205,7 +207,12 @@ const handleExport = async()=>{
 				<div className="h-[520px] overflow-auto">
 					{loading
 						?<Loader size={40}/>
-						:<CommonTable columns={columns} data={candidates}/>
+						:<CommonTable
+    columns={columns}
+    data={candidates}
+    search={search}
+    onSearch={setSearch}
+/>
 					}
 				</div>
 

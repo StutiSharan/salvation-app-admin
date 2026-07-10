@@ -39,11 +39,13 @@ export const createEmployee=(data)=>{
 ==============================
 */
 
-export const getCandidates=(page=1)=>{
-	if(!tokenCheck()) return
-	return axios.get(`/candidates?page=${page}`)
-}
+export const getCandidates = (page = 1, search = "") => {
+  if (!tokenCheck()) return
 
+  return axios.get(
+    `/candidates?page=${page}&search=${encodeURIComponent(search)}`
+  )
+}
 
 /*
 ==============================
@@ -99,3 +101,11 @@ export const updateEmploymentDetails = async(id,data)=>{
   data
  )
 }
+export const bulkImportEmployees = async (file) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  return await axios.post(
+    "/employees/bulk-import",
+    formData
+  );
+};

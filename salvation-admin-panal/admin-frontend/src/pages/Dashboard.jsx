@@ -33,21 +33,25 @@ export default function Dashboard(){
  const [candidates,setCandidates]=useState([])
  const [employees,setEmployees]=useState([])
  const [loading,setLoading]=useState(true)
-
+const [candidateTotal, setCandidateTotal] = useState(0)
+const [employeeTotal, setEmployeeTotal] = useState(0)
  useEffect(()=>{ loadData() },[])
 
-const loadData=async()=>{
-	try{
-		const [candRes,empRes]=await Promise.all([
-			getCandidates(1),
-			getEmployees(1)
-		])
+const loadData = async () => {
+  try {
+    const [candRes, empRes] = await Promise.all([
+      getCandidates(1),
+      getEmployees(1),
+    ])
 
-		setCandidates(candRes.data.data || [])
-		setEmployees(empRes.data.data || [])
-	}finally{
-		setLoading(false)
-	}
+    setCandidates(candRes.data.data || [])
+    setEmployees(empRes.data.data || [])
+
+    setCandidateTotal(candRes.data.pagination?.total || 0)
+    setEmployeeTotal(empRes.data.pagination?.total || 0)
+  } finally {
+    setLoading(false)
+  }
 }
 
  if(loading){
@@ -146,13 +150,13 @@ const newEmployeeLogins=employees.filter(emp=>{
 
     <KpiCard
      title="Total Candidates"
-     value={candidates.length}
+    value={candidateTotal}
      onClick={()=>navigate("/analytics/allCandidates")}
     />
 
     <KpiCard
      title="Total Employees"
-     value={employees.length}
+     value={employeeTotal}
      onClick={()=>navigate("/analytics/allEmployees")}
     />
 

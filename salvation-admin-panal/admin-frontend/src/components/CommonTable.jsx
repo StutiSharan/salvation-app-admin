@@ -1,17 +1,21 @@
 import {useState,useMemo,useEffect} from "react"
 import axios from "../api/axios"
-import {X} from "lucide-react"
-const CommonTable=({columns,data})=>{
+import {X, Download} from "lucide-react"
+const CommonTable=({columns,data,  search,
+    onSearch})=>{
 
- const [search,setSearch]=useState("")
  const [sortKey,setSortKey]=useState("")
  const [sortOrder,setSortOrder]=useState("asc")
 const [previewImage,setPreviewImage]=useState(null)
 const [imageLoading,setImageLoading]=useState(false)
  const [showColumnSelector,setShowColumnSelector]=useState(false)
- const [visibleKeys,setVisibleKeys]=useState(columns.map(c=>c.key))
+const [visibleKeys,setVisibleKeys]=useState([
+  "profilePhoto",
+  ...columns.map(c=>c.key)
+])
 const [thumbUrls,setThumbUrls]=useState({})
 const [thumbLoading,setThumbLoading]=useState({})
+const [searchText, setSearchText] = useState(search || "")
 const tableData=Array.isArray(data)?data:[]
  /* ======================================================
     GET ALL BACKEND FIELDS
@@ -29,6 +33,16 @@ useEffect(()=>{
 		}
 	})
 },[tableData])
+useEffect(() => {
+  setSearchText(search || "")
+}, [search])
+useEffect(() => {
+  const timer = setTimeout(() => {
+    onSearch(searchText)
+  }, 500)
+
+  return () => clearTimeout(timer)
+}, [searchText])
  const allDataKeys=useMemo(()=>{
  if(!tableData?.length) return []
 return Object.keys(tableData[0])
@@ -95,41 +109,33 @@ const allColumns=useMemo(()=>{
  /* ======================================================
     FILTER + SORT
  ====================================================== */
+const processedData = useMemo(() => {
+  let rows = [...tableData]
 
-const processedData=useMemo(()=>{
-	const query=search.toLowerCase()
+  if (sortKey) {
+    rows.sort((a, b) => {
+      let v1 = a[sortKey]
+      let v2 = b[sortKey]
 
-	let filtered=tableData.filter(row=>{
-		return visibleColumns.some(col=>{
-			const value=row[col.key]
-			if(!value) return false
-			return String(value).toLowerCase().includes(query)
-		})
-	})
+      if (sortKey.toLowerCase().includes("date")) {
+        v1 = new Date(v1)
+        v2 = new Date(v2)
+      }
 
-	if(sortKey){
-		filtered.sort((a,b)=>{
-			let v1=a[sortKey]
-			let v2=b[sortKey]
+      if (typeof v1 === "string") {
+        v1 = v1.toLowerCase()
+        v2 = v2.toLowerCase()
+      }
 
-			if(sortKey.toLowerCase().includes("date")){
-				v1=new Date(v1)
-				v2=new Date(v2)
-			}
+      if (v1 > v2) return sortOrder === "asc" ? 1 : -1
+      if (v1 < v2) return sortOrder === "asc" ? -1 : 1
 
-			if(typeof v1==="string"){
-				v1=v1.toLowerCase()
-				v2=v2.toLowerCase()
-			}
+      return 0
+    })
+  }
 
-			if(v1>v2) return sortOrder==="asc"?1:-1
-			if(v1<v2) return sortOrder==="asc"?-1:1
-			return 0
-		})
-	}
-
-	return filtered
-},[tableData,visibleColumns,search,sortKey,sortOrder])
+  return rows
+}, [tableData, sortKey, sortOrder])
  const handleSort=(key)=>{
   if(sortKey===key){
    setSortOrder(prev=>prev==="asc"?"desc":"asc")
@@ -247,24 +253,21 @@ const openProfilePreview=async(key)=>{
 
 	setImageLoading(false)
 }
- /* ======================================================
-    UI
- ====================================================== */
-
+const downloadProfilePhoto = () => {
+    window.location.href = previewImage
+}
  return(
  <div className="bg-[#F7F8FA] rounded-2xl p-3 sm:p-4">
 
    {/* ================= TOP BAR ================= */}
 
    <div className="flex flex-wrap gap-3 justify-between mb-4">
-
-    <input
-     placeholder="Search..."
-     value={search}
-     onChange={e=>setSearch(e.target.value)}
-     className="w-72 bg-white rounded-lg px-4 py-2.5 shadow-sm outline-none text-sm"
-    />
-
+<input
+  placeholder="Search..."
+  value={searchText}
+  onChange={(e)=>setSearchText(e.target.value)}
+  className="w-72 bg-white rounded-lg px-4 py-2.5 shadow-sm outline-none text-sm"
+/>
     <div className="flex items-center gap-4">
 
      <span className="text-sm text-gray-500">
@@ -365,31 +368,107 @@ const openProfilePreview=async(key)=>{
 
    </div>
 {(previewImage || imageLoading) && (
-	<div className="fixed inset-0 z-[9999] bg-black/70 flex items-center justify-center p-4">
-		<div className="relative bg-white rounded-2xl p-3 max-w-3xl w-full">
-			<button
-				onClick={()=>{
-					setPreviewImage(null)
-					setImageLoading(false)
-				}}
-				className="absolute -top-4 -right-4 bg-white text-gray-700 rounded-full p-2 shadow-lg hover:bg-red-500 hover:text-white"
-			>
-				<X size={22}/>
-			</button>
+  <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-center justify-center p-6">
 
-			{imageLoading?(
-				<div className="h-[400px] flex items-center justify-center">
-					<div className="h-10 w-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"/>
-				</div>
-			):(
-				<img
-					src={previewImage}
-					alt="Preview"
-					className="w-full max-h-[80vh] object-contain rounded-xl"
-				/>
-			)}
-		</div>
-	</div>
+    <div className="relative w-full max-w-3xl rounded-3xl overflow-hidden bg-white shadow-2xl">
+
+      {/* Header */}
+      <div className="flex items-center justify-between px-6 py-4 border-b">
+
+        <div>
+          <h2 className="text-xl font-semibold text-gray-800">
+            Profile Photo
+          </h2>
+
+          <p className="text-sm text-gray-500">
+            Passport Size Photograph
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3">
+
+          {previewImage && (
+           <button
+  onClick={downloadProfilePhoto}
+  className="
+    flex
+    items-center
+    gap-2
+    bg-gradient-to-r
+    from-blue-600
+    to-indigo-600
+    hover:from-blue-700
+    hover:to-indigo-700
+    text-white
+    px-5
+    py-2.5
+    rounded-xl
+    shadow-lg
+    transition-all
+    hover:scale-105
+    active:scale-95
+  "
+>
+  <Download size={18}/>
+  Download Photo
+</button>
+          )}
+
+          <button
+            onClick={()=>{
+              setPreviewImage(null)
+              setImageLoading(false)
+            }}
+            className="
+              w-10
+              h-10
+              rounded-xl
+              bg-gray-100
+              hover:bg-red-500
+              hover:text-white
+              flex
+              items-center
+              justify-center
+              transition
+            "
+          >
+            <X size={20}/>
+          </button>
+
+        </div>
+
+      </div>
+
+      {/* Body */}
+
+      <div className="p-8 flex justify-center items-center bg-gray-50 min-h-[500px]">
+
+        {imageLoading ? (
+
+          <div className="h-12 w-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"/>
+
+        ) : (
+
+          <img
+            src={previewImage}
+            alt="Profile"
+            className="
+              max-h-[70vh]
+              rounded-2xl
+              shadow-2xl
+              border-4
+              border-white
+              object-contain
+            "
+          />
+
+        )}
+
+      </div>
+
+    </div>
+
+  </div>
 )}
  </div>
  )

@@ -21,8 +21,11 @@ import { updateEmploymentDetails } from "../api/AdminApi"
 export default function Employees(){
 
  const [employees,setEmployees]=useState([])
+ const [employeeTotal, setEmployeeTotal] = useState(0)
  const [loading,setLoading]=useState(true)
-
+ const [search,setSearch]=useState("")  
+const [activeTodayCount,setActiveTodayCount]=useState(0)
+const [newThisMonthCount,setNewThisMonthCount]=useState(0)
  const [openModal,setOpenModal]=useState(false)
  const [selectedDocs,setSelectedDocs]=useState(null)
 const [exporting,setExporting] = useState(false)
@@ -50,16 +53,31 @@ const [pagination,setPagination]=useState({
 	hasNextPage:false,
 	hasPrevPage:false
 })
-useEffect(()=>{
-	fetchEmployees(page)
-},[page])
+useEffect(() => {
+  setPage(1)
+}, [search])
+
+useEffect(() => {
+  fetchEmployees(page)
+}, [page, search])
 
 const fetchEmployees=async(currentPage=page)=>{
 	try{
 		setLoading(true)
-		const res=await axios.get(`/employees?page=${currentPage}`)
-
+const res=await axios.get(
+  `/employees?page=${currentPage}&search=${encodeURIComponent(search)}`
+)
 		setEmployees(res.data.data || [])
+setEmployeeTotal(res.data.pagination?.total || 0)
+
+setActiveTodayCount(
+  res.data.stats?.activeToday || 0
+)
+
+setNewThisMonthCount(
+  res.data.stats?.newThisMonth || 0
+)
+    
 		setPagination(res.data.pagination || {
 			total:0,
 			page:1,
@@ -207,13 +225,7 @@ const saveEmploymentDetails = async()=>{
   return d.getMonth()===now.getMonth() && d.getFullYear()===now.getFullYear()
  }
 
- const activeTodayCount=useMemo(()=>{
-  return employees.filter(emp=>isToday(emp.lastLoginAt)).length
- },[employees])
 
- const newThisMonthCount=useMemo(()=>{
-  return employees.filter(emp=>isThisMonth(emp.createdAt)).length
- },[employees])
 
  const columns=[
   {
@@ -396,10 +408,27 @@ const saveEmploymentDetails = async()=>{
    </div>
 
    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-    <StatCard title="Total Employees" value={employees.length} icon={<Users size={18}/>} color="bg-blue-100 text-blue-600"/>
-    <StatCard title="Active Today" value={activeTodayCount} icon={<UserCheck size={18}/>} color="bg-green-100 text-green-600"/>
-    <StatCard title="New This Month" value={newThisMonthCount} icon={<UserPlus size={18}/>} color="bg-purple-100 text-purple-600"/>
-   </div>
+<StatCard
+  title="Total Employees"
+  value={employeeTotal}
+  icon={<Users size={18}/>}
+  color="bg-blue-100 text-blue-600"
+/>
+
+<StatCard
+  title="Active Today"
+  value={activeTodayCount}
+  icon={<UserCheck size={18}/>}
+  color="bg-green-100 text-green-600"
+/>
+
+<StatCard
+  title="New This Month"
+  value={newThisMonthCount}
+  icon={<UserPlus size={18}/>}
+  color="bg-purple-100 text-purple-600"
+/>
+</div>
 
    <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
     <div className="px-6 py-4 bg-gray-50 flex justify-between">
@@ -407,11 +436,18 @@ const saveEmploymentDetails = async()=>{
       <h2 className="font-semibold">Employee</h2>
       <p className="text-xs text-gray-500">View and manage employee data</p>
      </div>
-     <div className="text-sm text-gray-500">{employees.length} records</div>
+<div className="text-sm text-gray-500">
+  {employeeTotal} records
+</div>
     </div>
 
     <div className="h-[520px] overflow-auto">
-     {loading ? <TableSkeleton/> : <CommonTable columns={columns} data={employees}/>}
+     {loading ? <TableSkeleton/> : <CommonTable
+    columns={columns}
+    data={employees}
+    search={search}
+    onSearch={setSearch}
+/>}
     </div>
     <Pagination
 	page={page}
