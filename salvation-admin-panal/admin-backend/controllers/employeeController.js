@@ -1,7 +1,9 @@
 const Employee=require("../models/Employee")
 const generateId=require("../utils/generateEmployeeId")
 const uploadToS3 =require("../utils/s3Upload")
+const buildSearchFilter = require("../utils/buildSearchFilter")
 const LeaveEmployee=require("../models/LeaveEmployee")
+const XLSX=require("xlsx")
 
 const normalizeMobile=(mobile)=>{
 	if(!mobile) return ""
@@ -95,38 +97,75 @@ exports.createEmployee=async(req,res)=>{
  res.json(emp)
 }
 
-exports.getEmployees=async(req,res)=>{
-	try{
-		const page=Number(req.query.page)||1
-		const limit=10
-		const skip=(page-1)*limit
+exports.getEmployees = async (req, res) => {
+	console.log(req.query)
+console.log("Search =", req.query.search)
+  try {
+    const page = Number(req.query.page) || 1
+    const limit = 10
+    const skip = (page - 1) * limit
 
-		const total=await Employee.countDocuments()
+    const search = (req.query.search || "").trim()
 
-		const data=await Employee.find()
-			.sort({createdAt:-1})
-			.skip(skip)
-			.limit(limit)
+    let filter = {}
 
-		res.json({
-			success:true,
-			data,
-			pagination:{
-				total,
-				page,
-				limit,
-				totalPages:Math.ceil(total/limit),
-				hasNextPage:page<Math.ceil(total/limit),
-				hasPrevPage:page>1
-			}
-		})
-	}catch(err){
-		console.error(err)
-		res.status(500).json({
-			success:false,
-			message:"Server error"
-		})
-	}
+    if (search) {
+      filter = {
+        $or: [
+          { employeeId: { $regex: search, $options: "i" } },
+          { fullName: { $regex: search, $options: "i" } },
+          { fatherName: { $regex: search, $options: "i" } },
+          { loginMobile: { $regex: search, $options: "i" } },
+          { mobile: { $regex: search, $options: "i" } },
+          { designation: { $regex: search, $options: "i" } },
+          { address: { $regex: search, $options: "i" } },
+        ],
+      }
+    }
+
+    const total = await Employee.countDocuments(filter)
+   const todayStart = new Date()
+    todayStart.setHours(0,0,0,0)
+
+    const monthStart = new Date(
+      new Date().getFullYear(),
+      new Date().getMonth(),
+      1
+    )
+
+    const activeToday = await Employee.countDocuments({
+      lastLoginAt: { $gte: todayStart }
+    })
+
+    const newThisMonth = await Employee.countDocuments({
+      createdAt: { $gte: monthStart }
+    })
+
+    const data = await Employee.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+
+ res.json({
+      success: true,
+      data,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+        hasNextPage: page < Math.ceil(total / limit),
+        hasPrevPage: page > 1
+      },
+      stats: {
+        activeToday,
+        newThisMonth
+      }
+    })
+  } catch (err) {
+    console.log(err)
+    res.status(500).json({ success: false })
+  }
 }
 // exports.bulkSalaryFolderUpload=async(req,res)=>{
 //  try{
@@ -447,4 +486,146 @@ console.timeEnd(`S3-${file.originalname}`)
 		console.error(err)
 		res.status(500).json({message:"Upload failed"})
 	}
+}
+
+const excelDateToJS=(value)=>{
+
+    if(!value) return null
+
+    if(typeof value==="number"){
+
+        const date=new Date((value-25569)*86400*1000)
+
+        return date
+    }
+
+    const parts=String(value).split("/")
+
+    if(parts.length===3){
+
+        const [dd,mm,yyyy]=parts
+
+        return new Date(
+            Number(yyyy),
+            Number(mm)-1,
+            Number(dd)
+        )
+    }
+
+    return null
+}
+exports.bulkImportEmployees=async(req,res)=>{
+ console.log("BODY:", req.body);
+  console.log("FILE:", req.file);
+  console.log("HEADERS:", req.headers["content-type"]);
+try{
+
+if(!req.file){
+
+return res.status(400).json({
+success:false,
+message:"Excel file required"
+})
+
+}
+
+const workbook=XLSX.read(req.file.buffer,{
+type:"buffer"
+})
+
+const sheet=workbook.Sheets[
+workbook.SheetNames[0]
+]
+
+const rows=XLSX.utils.sheet_to_json(sheet,{
+defval:""
+})
+
+let inserted=0
+let skipped=[]
+
+for(const row of rows){
+
+const mobile=String(row["MOBILE NO"]).trim()
+
+if(!mobile){
+
+skipped.push({
+employee:row["EMP CODE"],
+reason:"Mobile missing"
+})
+
+continue
+}
+
+const exists=await Employee.findOne({
+loginMobile:mobile
+})
+
+if(exists){
+
+skipped.push({
+employee:row["EMP CODE"],
+reason:"Already exists"
+})
+
+continue
+}
+
+await Employee.create({
+
+employeeId:String(row["EMP CODE"]).trim(),
+
+fullName:String(row["EMPLOYEE NAME"]).trim(),
+
+fatherName:String(
+row["FATHER/HUSBAND NAME"]
+).trim(),
+
+designation:String(
+row["DESIGNATION"]
+).trim(),
+
+loginMobile:mobile,
+
+mobile:mobile,
+
+dateOfBirth:excelDateToJS(
+row["DOB"]
+),
+
+dateOfJoining:excelDateToJS(
+row["DOJ"]
+)
+
+})
+
+inserted++
+
+}
+
+res.json({
+
+success:true,
+
+inserted,
+
+skipped
+
+})
+
+}catch(err){
+
+console.log(err)
+
+res.status(500).json({
+
+success:false,
+
+message:"Import failed"
+
+})
+
+}
+
 }

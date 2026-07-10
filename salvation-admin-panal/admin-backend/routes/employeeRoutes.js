@@ -23,5 +23,10 @@ router.put(
   auth,
   c.updateEmploymentDetails
 )
-
+router.post(
+    "/bulk-import",
+    auth,
+    upload.single("file"),
+    c.bulkImportEmployees
+)
 module.exports=router

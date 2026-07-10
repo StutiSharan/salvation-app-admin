@@ -3,23 +3,40 @@ const Employee=require("../models/Employee")
 const deleteFromS3=require("../utils/deleteFromS3")
 const uploadToS3=require("../utils/s3Upload")
 
-exports.getSignedUrl=async(req,res)=>{
- try{
+const path = require("path")
 
-  const {key}=req.query
-  if(!key) return res.status(400).json({message:"Key required"})
+exports.getSignedUrl = async (req, res) => {
+  try {
+    const { key } = req.query
 
-  const url=s3.getSignedUrl("getObject",{
-   Bucket:process.env.AWS_S3_BUCKET,
-   Key:key,
-   Expires:60*10
-  })
+    if (!key) {
+      return res.status(400).json({
+        message: "Key required"
+      })
+    }
 
-  res.json({url})
+    const fileName = path.basename(key)
 
- }catch(err){
-  res.status(500).json({message:"Failed to fetch document"})
- }
+    const url = s3.getSignedUrl("getObject", {
+      Bucket: process.env.AWS_S3_BUCKET,
+      Key: key,
+
+      Expires: 600,
+
+      ResponseContentDisposition: `attachment; filename="${fileName}"`,
+
+      ResponseContentType: "application/octet-stream"
+    })
+
+    res.json({ url })
+
+  } catch (err) {
+    console.log(err)
+
+    res.status(500).json({
+      message: "Failed to fetch document"
+    })
+  }
 }
 exports.deleteDocument=async(req,res)=>{
  try{
