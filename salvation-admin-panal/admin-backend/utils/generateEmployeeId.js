@@ -63,6 +63,7 @@ const getNumber = (employeeId) => {
 }
 
 module.exports = async () => {
+  console.log("Running new SOS generator")
 
   const lastActive = await Employee
     .findOne({ employeeId: /^SOS/ })
@@ -78,10 +79,13 @@ module.exports = async () => {
   const leaveNumber = getNumber(lastLeave?.employeeData?.employeeId)
 
   if (!activeNumber && !leaveNumber) {
+	    console.log("Returning", `SOS${START_NUMBER}`)
+
     return `SOS${START_NUMBER}`
   }
 
   const nextNumber = Math.max(activeNumber, leaveNumber) + 1
+  console.log("Returning", `SOS${nextNumber}`)
 
   return `SOS${nextNumber}`
 }
