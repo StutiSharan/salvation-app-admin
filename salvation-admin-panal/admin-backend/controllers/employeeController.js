@@ -398,7 +398,7 @@ exports.bulkSalaryFolderUpload=async(req,res)=>{
 			...new Set(
 				files
 					.map(file=>{
-						const match=file.originalname.match(/EMP-\d+/i)
+const match = file.originalname.match(/SOS\d+/i)
 						return match?match[0].toUpperCase():null
 					})
 					.filter(Boolean)
@@ -410,8 +410,7 @@ exports.bulkSalaryFolderUpload=async(req,res)=>{
 
 		const processFile=async(file)=>{
 			const fileName=file.originalname
-			const match=fileName.match(/EMP-\d+/i)
-
+const match = fileName.match(/SOS\d+/i)
 			if(!match){
 				failed.push({file:fileName,reason:"Employee ID not found"})
 				return
