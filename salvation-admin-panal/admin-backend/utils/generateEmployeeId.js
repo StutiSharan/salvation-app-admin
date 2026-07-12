@@ -1,50 +1,87 @@
-// const Employee = require("../models/Employee")
+// // const Employee = require("../models/Employee")
 
-// module.exports = async()=>{
+// // module.exports = async()=>{
 
-//  const lastEmployee = await Employee
-//   .findOne({employeeId:/^EMP-/})
-//   .sort({createdAt:-1})
-//   .select("employeeId")
+// //  const lastEmployee = await Employee
+// //   .findOne({employeeId:/^EMP-/})
+// //   .sort({createdAt:-1})
+// //   .select("employeeId")
 
-//  if(!lastEmployee){
-//   return "EMP-0001"
-//  }
+// //  if(!lastEmployee){
+// //   return "EMP-0001"
+// //  }
 
-//  const lastNumber = parseInt(lastEmployee.employeeId.split("-")[1])
+// //  const lastNumber = parseInt(lastEmployee.employeeId.split("-")[1])
 
-//  const nextNumber = lastNumber + 1
+// //  const nextNumber = lastNumber + 1
 
-//  return "EMP-" + String(nextNumber).padStart(4,"0")
+// //  return "EMP-" + String(nextNumber).padStart(4,"0")
+// // }
+// const Employee=require("../models/Employee")
+// const LeaveEmployee=require("../models/LeaveEmployee")
+
+// const getNumber=(employeeId)=>{
+// 	if(!employeeId) return 0
+// 	const match=String(employeeId).match(/EMP-(\d+)/)
+// 	return match?Number(match[1]):0
 // }
-const Employee=require("../models/Employee")
-const LeaveEmployee=require("../models/LeaveEmployee")
 
-const getNumber=(employeeId)=>{
-	if(!employeeId) return 0
-	const match=String(employeeId).match(/EMP-(\d+)/)
-	return match?Number(match[1]):0
+// module.exports=async()=>{
+// 	const lastActive=await Employee
+// 		.findOne({employeeId:/^EMP-/})
+// 		.sort({employeeId:-1})
+// 		.select("employeeId")
+
+// 	const lastLeave=await LeaveEmployee
+// 		.findOne({"employeeData.employeeId":/^EMP-/})
+// 		.sort({"employeeData.employeeId":-1})
+// 		.select("employeeData.employeeId")
+
+// 	const activeNumber=getNumber(lastActive?.employeeId)
+// 	const leaveNumber=getNumber(lastLeave?.employeeData?.employeeId)
+
+// 	if(activeNumber===0 && leaveNumber===0){
+// 		return "EMP-0001"
+// 	}
+
+// 	const nextNumber=Math.max(activeNumber,leaveNumber)+1
+
+// 	return "EMP-"+String(nextNumber).padStart(4,"0")
+// }
+
+const Employee = require("../models/Employee")
+const LeaveEmployee = require("../models/LeaveEmployee")
+
+const START_NUMBER = 6818
+
+const getNumber = (employeeId) => {
+  if (!employeeId) return 0
+
+  const match = String(employeeId).match(/SOS(\d+)/)
+
+  return match ? Number(match[1]) : 0
 }
 
-module.exports=async()=>{
-	const lastActive=await Employee
-		.findOne({employeeId:/^EMP-/})
-		.sort({employeeId:-1})
-		.select("employeeId")
+module.exports = async () => {
 
-	const lastLeave=await LeaveEmployee
-		.findOne({"employeeData.employeeId":/^EMP-/})
-		.sort({"employeeData.employeeId":-1})
-		.select("employeeData.employeeId")
+  const lastActive = await Employee
+    .findOne({ employeeId: /^SOS/ })
+    .sort({ employeeId: -1 })
+    .select("employeeId")
 
-	const activeNumber=getNumber(lastActive?.employeeId)
-	const leaveNumber=getNumber(lastLeave?.employeeData?.employeeId)
+  const lastLeave = await LeaveEmployee
+    .findOne({ "employeeData.employeeId": /^SOS/ })
+    .sort({ "employeeData.employeeId": -1 })
+    .select("employeeData.employeeId")
 
-	if(activeNumber===0 && leaveNumber===0){
-		return "EMP-0001"
-	}
+  const activeNumber = getNumber(lastActive?.employeeId)
+  const leaveNumber = getNumber(lastLeave?.employeeData?.employeeId)
 
-	const nextNumber=Math.max(activeNumber,leaveNumber)+1
+  if (!activeNumber && !leaveNumber) {
+    return `SOS${START_NUMBER}`
+  }
 
-	return "EMP-"+String(nextNumber).padStart(4,"0")
+  const nextNumber = Math.max(activeNumber, leaveNumber) + 1
+
+  return `SOS${nextNumber}`
 }
