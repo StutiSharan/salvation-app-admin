@@ -17,32 +17,39 @@ export default function GenerateEmployee() {
   const [importLoading, setImportLoading] = useState(false);
   /* ================= GENERATE ================= */
 
-  const handleGenerate = async () => {
-    if (!mobile.trim()) {
-      toast.error("Enter login mobile");
-      return;
-    }
+ const handleGenerate = async () => {
+  const mobileNumber = mobile.trim()
 
-    try {
-      setLoading(true);
+  if (!mobileNumber) {
+    toast.error("Enter login mobile number")
+    return
+  }
 
-      const res = await createEmployee({
-        loginMobile: mobile,
-      });
+  if (!/^\d{10}$/.test(mobileNumber)) {
+    toast.error("Mobile number must contain exactly 10 digits")
+    return
+  }
 
-      if (!res) return;
+  try {
+    setLoading(true)
 
-      setGeneratedId(res.data.employeeId);
-      toast.success("Employee created successfully");
-      setMobile("");
-    } catch (err) {
-      toast.error(
-        err?.response?.data?.message || "Failed to generate employee",
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+    const res = await createEmployee({
+      loginMobile: mobileNumber,
+    })
+
+    if (!res) return
+
+    setGeneratedId(res.data.employeeId)
+    toast.success("Employee created successfully")
+    setMobile("")
+  } catch (err) {
+    toast.error(
+      err?.response?.data?.message || "Failed to generate employee"
+    )
+  } finally {
+    setLoading(false)
+  }
+}
 
   /* ================= REFRESH ================= */
 
@@ -111,12 +118,32 @@ export default function GenerateEmployee() {
               Login Mobile Number
             </label>
 
-            <input
-              value={mobile}
-              onChange={(e) => setMobile(e.target.value)}
-              placeholder="Enter employee mobile"
-              className="w-full border rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-[#0F2747] outline-none"
-            />
+           <input
+  type="text"
+  inputMode="numeric"
+  maxLength={10}
+  value={mobile}
+  onChange={(e) => {
+    const value = e.target.value.replace(/\D/g, "")
+    setMobile(value)
+  }}
+  onKeyDown={(e) => {
+    if (
+      !/[0-9]/.test(e.key) &&
+      ![
+        "Backspace",
+        "Delete",
+        "ArrowLeft",
+        "ArrowRight",
+        "Tab",
+      ].includes(e.key)
+    ) {
+      e.preventDefault()
+    }
+  }}
+  placeholder="Enter 10 digit mobile number"
+  className="w-full border rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-[#0F2747] outline-none"
+/>
           </div>
 
           {/* GENERATE BUTTON */}
