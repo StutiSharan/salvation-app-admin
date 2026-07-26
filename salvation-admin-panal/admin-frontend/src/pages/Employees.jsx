@@ -208,7 +208,16 @@ const saveEmploymentDetails = async()=>{
    year:"numeric"
   })
  }
+const formatTime = (date) => {
+  if (!date) return "-"
 
+  return new Date(date).toLocaleTimeString("en-IN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true,
+  })
+}
  const isToday=(date)=>{
   if(!date) return false
   const d=new Date(date)
@@ -309,6 +318,7 @@ const saveEmploymentDetails = async()=>{
    sortable:true,
    render:(row)=>formatDate(row.createdAt)
   },
+  
   {
 	label:"Documents",
 	key:"documents",
@@ -367,8 +377,23 @@ const saveEmploymentDetails = async()=>{
 
  </div>
 )
-  }
-
+  },
+  {
+  label: "Check In At",
+  key: "checkedInAt",
+  render: (row) =>
+    row.checkinLocation?.checkedInAt
+      ? formatTime(row.checkinLocation.checkedInAt)
+      : "-"
+},
+{
+  label: "Check Out At",
+  key: "checkedOutAt",
+  render: (row) =>
+    row.checkoutLocation?.checkedOutAt
+      ? formatTime(row.checkoutLocation.checkedOutAt)
+      : "-"
+},
   
  ]
 
