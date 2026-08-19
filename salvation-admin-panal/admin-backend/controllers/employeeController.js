@@ -102,8 +102,8 @@ exports.getEmployees = async (req, res) => {
 console.log("Search =", req.query.search)
   try {
     const page = Number(req.query.page) || 1
-    const limit = 10
-    const skip = (page - 1) * limit
+  const limit = Number(req.query.limit) || 10
+const skip = (page - 1) * limit
 
     const search = (req.query.search || "").trim()
 
@@ -272,8 +272,8 @@ exports.deleteEmployee=async(req,res)=>{
 exports.getLeaveEmployees=async(req,res)=>{
 	try{
 		const page=Number(req.query.page)||1
-		const limit=10
-		const skip=(page-1)*limit
+	const limit = Number(req.query.limit) || 10
+const skip = (page - 1) * limit
 
 		const total=await LeaveEmployee.countDocuments()
 
@@ -513,118 +513,335 @@ const excelDateToJS=(value)=>{
 
     return null
 }
-exports.bulkImportEmployees=async(req,res)=>{
- console.log("BODY:", req.body);
-  console.log("FILE:", req.file);
-  console.log("HEADERS:", req.headers["content-type"]);
-try{
+// exports.bulkImportEmployees=async(req,res)=>{
+//  console.log("BODY:", req.body);
+//   console.log("FILE:", req.file);
+//   console.log("HEADERS:", req.headers["content-type"]);
+// try{
 
-if(!req.file){
+// if(!req.file){
 
-return res.status(400).json({
-success:false,
-message:"Excel file required"
-})
+// return res.status(400).json({
+// success:false,
+// message:"Excel file required"
+// })
 
-}
+// }
 
-const workbook=XLSX.read(req.file.buffer,{
-type:"buffer"
-})
+// const workbook=XLSX.read(req.file.buffer,{
+// type:"buffer"
+// })
 
-const sheet=workbook.Sheets[
-workbook.SheetNames[0]
-]
+// const sheet=workbook.Sheets[
+// workbook.SheetNames[0]
+// ]
 
-const rows=XLSX.utils.sheet_to_json(sheet,{
-defval:""
-})
+// const rows=XLSX.utils.sheet_to_json(sheet,{
+// defval:""
+// })
 
-let inserted=0
-let skipped=[]
+// let inserted=0
+// let skipped=[]
 
-for(const row of rows){
+// for(const row of rows){
 
-const mobile=String(row["MOBILE NO"]).trim()
+// const mobile=String(row["MOBILE NO"]).trim()
 
-if(!mobile){
+// if(!mobile){
 
-skipped.push({
-employee:row["EMP CODE"],
-reason:"Mobile missing"
-})
+// skipped.push({
+// employee:row["EMP CODE"],
+// reason:"Mobile missing"
+// })
 
-continue
-}
+// continue
+// }
 
-const exists=await Employee.findOne({
-loginMobile:mobile
-})
+// const exists=await Employee.findOne({
+// loginMobile:mobile
+// })
 
-if(exists){
+// if(exists){
 
-skipped.push({
-employee:row["EMP CODE"],
-reason:"Already exists"
-})
+// skipped.push({
+// employee:row["EMP CODE"],
+// reason:"Already exists"
+// })
 
-continue
-}
+// continue
+// }
 
-await Employee.create({
+// await Employee.create({
 
-employeeId:String(row["EMP CODE"]).trim(),
+// employeeId:String(row["EMP CODE"]).trim(),
 
-fullName:String(row["EMPLOYEE NAME"]).trim(),
+// fullName:String(row["EMPLOYEE NAME"]).trim(),
 
-fatherName:String(
-row["FATHER/HUSBAND NAME"]
-).trim(),
+// fatherName:String(
+// row["FATHER/HUSBAND NAME"]
+// ).trim(),
 
-designation:String(
-row["DESIGNATION"]
-).trim(),
+// designation:String(
+// row["DESIGNATION"]
+// ).trim(),
 
-loginMobile:mobile,
+// loginMobile:mobile,
 
-mobile:mobile,
+// mobile:mobile,
 
-dateOfBirth:excelDateToJS(
-row["DOB"]
-),
+// dateOfBirth:excelDateToJS(
+// row["DOB"]
+// ),
 
-dateOfJoining:excelDateToJS(
-row["DOJ"]
-)
+// dateOfJoining:excelDateToJS(
+// row["DOJ"]
+// )
 
-})
+// })
 
-inserted++
+// inserted++
 
-}
+// }
 
-res.json({
+// res.json({
 
-success:true,
+// success:true,
 
-inserted,
+// inserted,
 
-skipped
+// skipped
 
-})
+// })
 
-}catch(err){
+// }catch(err){
 
-console.log(err)
+// console.log(err)
 
-res.status(500).json({
+// res.status(500).json({
 
-success:false,
+// success:false,
 
-message:"Import failed"
+// message:"Import failed"
 
-})
+// })
 
-}
+// }
 
+// }
+
+/* =========================================================
+   BULK IMPORT EMPLOYEES FROM EXCEL
+   EMPLOYEE ID COMES DIRECTLY FROM "EMP CODE"
+   ========================================================= */
+
+exports.bulkImportEmployees = async (req, res) => {
+	try {
+		if (!req.file) {
+			return res.status(400).json({
+				success: false,
+				message: "Excel file is required"
+			})
+		}
+
+		/* ================= READ EXCEL ================= */
+
+		const workbook = XLSX.read(req.file.buffer, {
+			type: "buffer"
+		})
+
+		const sheetName = workbook.SheetNames[0]
+		const sheet = workbook.Sheets[sheetName]
+
+		const rows = XLSX.utils.sheet_to_json(sheet, {
+			defval: ""
+		})
+
+		if (!rows.length) {
+			return res.status(400).json({
+				success: false,
+				message: "Excel file is empty"
+			})
+		}
+
+		let inserted = 0
+		const skipped = []
+
+		/* ================= PROCESS EACH ROW ================= */
+
+		for (const row of rows) {
+
+			/* ---------- EMPLOYEE ID FROM EXCEL ---------- */
+
+			const employeeId = String(
+				row["EMP CODE"] || ""
+			).trim()
+
+			const fullName = String(
+				row["EMPLOYEE NAME"] || ""
+			).trim()
+
+			const fatherName = String(
+				row["FATHER/HUSBAND NAME"] || ""
+			).trim()
+
+			const designation = String(
+				row["DESIGNATION"] || ""
+			).trim()
+
+			const mobile = normalizeMobile(
+				row["MOBILE NO"]
+			)
+
+			/* ---------- EMPLOYEE ID REQUIRED ---------- */
+
+			if (!employeeId) {
+				skipped.push({
+					employee: fullName || "Unknown",
+					reason: "Employee ID (EMP CODE) missing"
+				})
+
+				continue
+			}
+
+			/* ---------- MOBILE REQUIRED ---------- */
+
+			if (!mobile) {
+				skipped.push({
+					employee: employeeId,
+					reason: "Mobile number missing"
+				})
+
+				continue
+			}
+
+			if (!/^\d{10}$/.test(mobile)) {
+				skipped.push({
+					employee: employeeId,
+					reason: "Invalid mobile number"
+				})
+
+				continue
+			}
+
+			/* ---------- CHECK EMPLOYEE ID ---------- */
+
+			const existingEmployeeId = await Employee.findOne({
+				employeeId
+			})
+
+			if (existingEmployeeId) {
+				skipped.push({
+					employee: employeeId,
+					reason: "Employee ID already exists"
+				})
+
+				continue
+			}
+
+			/* ---------- CHECK MOBILE ---------- */
+
+			const existingMobile = await Employee.findOne({
+				$or: [
+					{ loginMobile: mobile },
+					{ mobile: mobile }
+				]
+			})
+
+			if (existingMobile) {
+				skipped.push({
+					employee: employeeId,
+					reason: "Mobile number already exists"
+				})
+
+				continue
+			}
+
+			/* ---------- DATE CONVERSION ---------- */
+
+			const excelDateToJS = (value) => {
+				if (!value) return null
+
+				if (value instanceof Date) {
+					return value
+				}
+
+				if (typeof value === "number") {
+					const excelEpoch = new Date(
+						Date.UTC(1899, 11, 30)
+					)
+
+					return new Date(
+						excelEpoch.getTime() +
+						value * 86400000
+					)
+				}
+
+				const parsed = new Date(value)
+
+				return isNaN(parsed.getTime())
+					? null
+					: parsed
+			}
+
+			const dateOfBirth = excelDateToJS(
+				row["DOB"]
+			)
+
+			const dateOfJoining = excelDateToJS(
+				row["DOJ"]
+			)
+
+			/* ---------- CREATE EMPLOYEE ---------- */
+
+			await Employee.create({
+				employeeId,
+
+				fullName,
+
+				fatherName,
+
+				designation,
+
+				loginMobile: mobile,
+
+				mobile,
+
+				dateOfBirth,
+
+				dateOfJoining
+			})
+
+			inserted++
+		}
+
+		/* ================= RESPONSE ================= */
+
+		return res.status(200).json({
+			success: true,
+			message: "Employees imported successfully",
+			inserted,
+			skipped
+		})
+
+	} catch (err) {
+		console.error(
+			"❌ BULK EMPLOYEE IMPORT ERROR:",
+			err
+		)
+
+		/* ---------- DUPLICATE KEY ---------- */
+
+		if (err.code === 11000) {
+			return res.status(409).json({
+				success: false,
+				message: "Duplicate employee ID or mobile number found"
+			})
+		}
+
+		return res.status(500).json({
+			success: false,
+			message: "Failed to import employees",
+			error: err.message
+		})
+	}
 }

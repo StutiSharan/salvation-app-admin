@@ -113,31 +113,71 @@ dateOfBirth: emp.dateOfBirth
 
  setEmploymentModal(true)
 }
-const handleExport = async()=>{
+// const handleExport = async()=>{
 
- try{
+//  try{
 
-  setExporting(true)
+//   setExporting(true)
 
-  exportToExcel(
-   employees,
-   "Employees",
-   [
-    "_id",
-    "__v",
-    "otp",
-    "sessionExpiresAt"
-   ]
-  )
+//   exportToExcel(
+//    employees,
+//    "Employees",
+//    [
+//     "_id",
+//     "__v",
+//     "otp",
+//     "sessionExpiresAt"
+//    ]
+//   )
 
- }catch(err){
-  console.log(err)
- }finally{
-  setTimeout(()=>{
-   setExporting(false)
-  },500)
- }
+//  }catch(err){
+//   console.log(err)
+//  }finally{
+//   setTimeout(()=>{
+//    setExporting(false)
+//   },500)
+//  }
 
+// }
+
+const handleExport = async () => {
+  try {
+    setExporting(true)
+
+    // Fetch ALL employees matching the current search
+    const res = await axios.get(
+      `/employees?page=1&limit=100000&search=${encodeURIComponent(search)}`
+    )
+
+    const allEmployees = res.data.data || []
+
+    if (!allEmployees.length) {
+      alert("No data found")
+      return
+    }
+
+    exportToExcel(
+      allEmployees,
+      search
+        ? `Employees_${search}`
+        : "Employees",
+      [
+        "_id",
+        "__v",
+        "otp",
+        "sessionExpiresAt"
+      ]
+    )
+
+  } catch (err) {
+    console.log("Export error:", err)
+    alert(
+      err.response?.data?.message ||
+      "Failed to export employees"
+    )
+  } finally {
+    setExporting(false)
+  }
 }
 const saveEmploymentDetails = async()=>{
  try{

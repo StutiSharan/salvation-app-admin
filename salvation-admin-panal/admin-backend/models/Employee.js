@@ -82,8 +82,10 @@ checkoutLocation:{
   employeeUploads:{
     aadhaar:{ type:String, default:"" },
     pan:{ type:String, default:"" },
+      experience:{ type:String, default:"" },
     bankPassbook:{ type:String, default:"" },
     marksheet12:{ type:String, default:"" },
+          marksheet10:{ type:String, default:"" },
     graduation:{ type:String, default:"" }
   },
 

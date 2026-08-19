@@ -36,33 +36,72 @@ useEffect(() => {
 useEffect(() => {
   fetchCandidates(page)
 }, [page, search])
-const handleExport = async()=>{
+// const handleExport = async()=>{
 
- try{
+//  try{
 
-  setExporting(true)
+//   setExporting(true)
 
-  exportToExcel(
-   candidates,
-   "Candidates",
-   [
-    "_id",
-    "__v",
-    "resumeFilePath",
-    "aadhaarFilePath"
-   ]
-  )
+//   exportToExcel(
+//    candidates,
+//    "Candidates",
+//    [
+//     "_id",
+//     "__v",
+//     "resumeFilePath",
+//     "aadhaarFilePath"
+//    ]
+//   )
 
- }catch(err){
-  console.log(err)
- }finally{
+//  }catch(err){
+//   console.log(err)
+//  }finally{
 
-  setTimeout(()=>{
-   setExporting(false)
-  },500)
+//   setTimeout(()=>{
+//    setExporting(false)
+//   },500)
 
- }
+//  }
 
+// }
+
+const handleExport = async () => {
+  try {
+    setExporting(true)
+
+    // Get ALL candidates matching the current search
+    const res = await axios.get(
+      `/candidates?page=1&limit=100000&search=${encodeURIComponent(search)}`
+    )
+
+    const allCandidates = res.data.data || []
+
+    if (!allCandidates.length) {
+      alert("No data found")
+      return
+    }
+
+    exportToExcel(
+      allCandidates,
+      search ? `Candidates_${search}` : "Candidates",
+      [
+        "_id",
+        "__v",
+        "resumeFilePath",
+        "aadhaarFilePath"
+      ]
+    )
+
+  } catch (err) {
+    console.log("Export error:", err)
+
+    alert(
+      err.response?.data?.message ||
+      "Failed to export candidates"
+    )
+  } finally {
+    setExporting(false)
+  }
 }
 	const fetchCandidates = async (
   currentPage = page,
