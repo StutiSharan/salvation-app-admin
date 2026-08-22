@@ -1,4 +1,4 @@
-import {useState,useMemo,useEffect} from "react"
+import {useState,useMemo,useEffect,useRef} from "react"
 import axios from "../api/axios"
 import {X, Download} from "lucide-react"
 const CommonTable=({columns,data,  search,
@@ -16,10 +16,17 @@ const [visibleKeys,setVisibleKeys]=useState([
 const [thumbUrls,setThumbUrls]=useState({})
 const [thumbLoading,setThumbLoading]=useState({})
 const [searchText, setSearchText] = useState(search || "")
+const searchInputRef = useRef(null)
+
 const tableData=Array.isArray(data)?data:[]
  /* ======================================================
     GET ALL BACKEND FIELDS
  ====================================================== */
+ useEffect(() => {
+  if (searchInputRef.current) {
+    searchInputRef.current.focus()
+  }
+}, [])
 useEffect(()=>{
 	const keys=[...new Set(
 	(tableData||[])
@@ -33,16 +40,19 @@ useEffect(()=>{
 		}
 	})
 },[tableData])
+
 useEffect(() => {
   setSearchText(search || "")
 }, [search])
+
 useEffect(() => {
   const timer = setTimeout(() => {
-    onSearch(searchText)
-  }, 500)
+    onSearch(searchText.trim())
+  }, 900) // 1 second debounce
 
   return () => clearTimeout(timer)
-}, [searchText])
+}, [searchText, onSearch])
+
  const allDataKeys=useMemo(()=>{
  if(!tableData?.length) return []
 return Object.keys(tableData[0])
@@ -262,12 +272,30 @@ const downloadProfilePhoto = () => {
    {/* ================= TOP BAR ================= */}
 
    <div className="flex flex-wrap gap-3 justify-between mb-4">
-<input
-  placeholder="Search..."
-  value={searchText}
-  onChange={(e)=>setSearchText(e.target.value)}
-  className="w-72 bg-white rounded-lg px-4 py-2.5 shadow-sm outline-none text-sm"
-/>
+<div className="relative w-72">
+  <input
+    ref={searchInputRef}
+    autoFocus
+    placeholder="Search..."
+    value={searchText}
+    onChange={(e) => setSearchText(e.target.value)}
+    className="w-full bg-white rounded-lg px-4 py-2.5 pr-10 shadow-sm outline-none text-sm"
+  />
+
+  {searchText && (
+    <button
+      type="button"
+      onClick={() => {
+        setSearchText("")
+        searchInputRef.current?.focus()
+      }}
+      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition"
+      title="Clear search"
+    >
+      <X size={19} />
+    </button>
+  )}
+</div>
     <div className="flex items-center gap-4">
 
      <span className="text-sm text-gray-500">
