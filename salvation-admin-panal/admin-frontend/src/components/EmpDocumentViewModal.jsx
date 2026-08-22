@@ -200,8 +200,10 @@ const DOCUMENT_LABELS={
 	aadhaar:"Aadhaar",
 	pan:"PAN",
 	bankPassbook:"Bank Passbook",
+	marksheet10:"10th Marksheet",
 	marksheet12:"12th Marksheet",
 	graduation:"Graduation",
+	experience:"Experience",
 	offerLetter:"Offer Letter",
 	appointmentLetter:"Appointment Letter",
 	uanLetter:"UAN Letter",
@@ -212,8 +214,10 @@ const EMPLOYEE_DOC_ORDER=[
 	"aadhaar",
 	"pan",
 	"bankPassbook",
+	"marksheet10",
 	"marksheet12",
-	"graduation"
+	"graduation",
+	"experience"
 ]
 
 const COMPANY_DOC_ORDER=[
