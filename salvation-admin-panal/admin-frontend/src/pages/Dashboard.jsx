@@ -151,27 +151,27 @@ const newEmployeeLogins=employees.filter(emp=>{
     <KpiCard
      title="Total Candidates"
     value={candidateTotal}
-     onClick={()=>navigate("/analytics/allCandidates")}
+     onClick={()=>navigate("/candidates")}
     />
 
     <KpiCard
      title="Total Employees"
      value={employeeTotal}
-     onClick={()=>navigate("/analytics/allEmployees")}
+     onClick={()=>navigate("/employees")}
     />
 
     <KpiCard
      title="New Candidates"
      value={newCandidates.length}
      badge="LAST 2 DAYS"
-     onClick={()=>navigate("/analytics/newCandidates")}
+    //  onClick={()=>navigate("/analytics/newCandidates")}
     />
 
    <KpiCard
  title="New Employee Logins"
  value={newEmployeeLogins.length}
  badge="LAST 2 DAYS"
- onClick={()=>navigate("/analytics/employeeLogins")}
+//  onClick={()=>navigate("/analytics/employeeLogins")}
 />
 
 

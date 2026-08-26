@@ -4,7 +4,7 @@ import axios from "../api/axios"
 import CommonTable from "../components/CommonTable"
 import Loader from "../components/Loader"
 import { exportToExcel } from "../utills/exportToExcel"
-import {RefreshCw,X,Copy,Check,ChevronLeft,ChevronRight} from "lucide-react"
+import {RefreshCw,X,Copy,Check,ChevronLeft,ChevronRight,  Edit} from "lucide-react"
 
 export default function Candidates(){
 	const [candidates,setCandidates]=useState([])
@@ -28,7 +28,13 @@ export default function Candidates(){
 	const [previewType,setPreviewType]=useState("")
 	const [previewLoading,setPreviewLoading]=useState(false)
 	const [zoom,setZoom]=useState(false)
-
+const [editModal,setEditModal] = useState(false)
+const [selectedCandidate,setSelectedCandidate] = useState(null)
+const [candidateForm,setCandidateForm] = useState({
+  fullName:"",
+  mobile:""
+})
+const [savingCandidate,setSavingCandidate] = useState(false)
 useEffect(() => {
   setPage(1)
 }, [search])
@@ -159,7 +165,73 @@ const handleExport = async () => {
 			window.open(preview,"_blank")
 		}
 	}
+const openEditCandidateModal = (candidate) => {
+  setSelectedCandidate(candidate)
 
+  setCandidateForm({
+    fullName: candidate.fullName || "",
+    mobile: candidate.mobile || ""
+  })
+
+  setEditModal(true)
+}
+const updateCandidate = async () => {
+  try {
+    setSavingCandidate(true)
+
+    const payload = {}
+
+    // Name was changed
+    if (
+      candidateForm.fullName.trim() !==
+      (selectedCandidate.fullName || "").trim()
+    ) {
+      payload.fullName = candidateForm.fullName.trim()
+    }
+
+    // Mobile was changed
+    if (
+      candidateForm.mobile.trim() !==
+      (selectedCandidate.mobile || "").trim()
+    ) {
+      payload.mobile = candidateForm.mobile.trim()
+    }
+
+    // Nothing changed
+    if (Object.keys(payload).length === 0) {
+      alert("No changes to update")
+      return
+    }
+
+    console.log("📤 Updating candidate with:", payload)
+
+    const res = await axios.put(
+      `/candidates/${selectedCandidate._id}`,
+      payload
+    )
+
+    console.log("✅ Candidate updated:", res.data)
+
+    await fetchCandidates(page, search)
+
+    setEditModal(false)
+    setSelectedCandidate(null)
+
+  } catch (err) {
+    console.log(
+      "❌ Update candidate error:",
+      err.response?.data || err
+    )
+
+    alert(
+      err.response?.data?.message ||
+      "Failed to update candidate"
+    )
+
+  } finally {
+    setSavingCandidate(false)
+  }
+}
 	const columns=[
 		{
 			label:"Candidate ID",
@@ -198,7 +270,20 @@ const handleExport = async () => {
 			label:"Created",
 			key:"createdAt",
 			render:r=>r.createdAt?new Date(r.createdAt).toLocaleDateString("en-GB"):"-"
-		}
+		},
+		{
+  label:"Action",
+  key:"action",
+  render:(row)=>(
+    <button
+      onClick={()=>openEditCandidateModal(row)}
+      className="px-3 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg text-xs flex items-center gap-1"
+    >
+      <Edit size={14}/>
+      Edit
+    </button>
+  )
+}
 	]
 
 	if(error) return <div className="p-8 text-red-500">{error}</div>
@@ -294,6 +379,124 @@ const handleExport = async () => {
 					</div>
 				</div>
 			)}
+			{editModal && selectedCandidate && (
+  <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
+
+    <div className="bg-white w-full max-w-md rounded-2xl p-6 shadow-xl">
+
+      {/* HEADER */}
+      <div className="flex justify-between items-center mb-5">
+
+        <div>
+          <h2 className="text-lg font-semibold text-gray-800">
+            Edit Candidate
+          </h2>
+
+          <p className="text-xs text-gray-500 mt-1">
+            Update candidate name or mobile number
+          </p>
+        </div>
+
+        <button
+          onClick={() => setEditModal(false)}
+          className="p-2 hover:bg-gray-100 rounded-lg"
+        >
+          <X size={18}/>
+        </button>
+
+      </div>
+
+      <div className="space-y-4">
+
+        {/* CANDIDATE ID */}
+        <div>
+          <label className="text-sm font-medium text-gray-700">
+            Candidate ID
+          </label>
+
+          <input
+            type="text"
+            value={selectedCandidate.candidateId || ""}
+            disabled
+            className="w-full border rounded-lg p-2 mt-1 bg-gray-100 text-gray-500"
+          />
+        </div>
+
+        {/* NAME */}
+        <div>
+          <label className="text-sm font-medium text-gray-700">
+            Candidate Name
+          </label>
+
+          <input
+            type="text"
+            value={candidateForm.fullName}
+            onChange={(e)=>{
+              setCandidateForm(prev=>({
+                ...prev,
+                fullName:e.target.value
+              }))
+            }}
+            placeholder="Enter candidate name"
+            className="w-full border rounded-lg p-2 mt-1 outline-none focus:ring-2 focus:ring-[#0F2747]"
+          />
+        </div>
+
+        {/* MOBILE */}
+        <div>
+          <label className="text-sm font-medium text-gray-700">
+            Mobile Number
+          </label>
+
+          <input
+            type="text"
+            inputMode="numeric"
+            maxLength={10}
+            value={candidateForm.mobile}
+            onChange={(e)=>{
+              const value = e.target.value
+                .replace(/\D/g,"")
+                .slice(0,10)
+
+              setCandidateForm(prev=>({
+                ...prev,
+                mobile:value
+              }))
+            }}
+            placeholder="Enter 10 digit mobile number"
+            className="w-full border rounded-lg p-2 mt-1 outline-none focus:ring-2 focus:ring-[#0F2747]"
+          />
+        </div>
+
+      </div>
+
+      {/* FOOTER */}
+      <div className="flex justify-end gap-3 mt-6">
+
+        <button
+          onClick={()=>setEditModal(false)}
+          disabled={savingCandidate}
+          className="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50"
+        >
+          Cancel
+        </button>
+
+        <button
+          onClick={updateCandidate}
+          disabled={savingCandidate}
+          className="px-4 py-2 bg-[#0F2747] text-white rounded-lg disabled:opacity-50"
+        >
+          {savingCandidate
+            ? "Saving..."
+            : "Save Changes"}
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+)}
 		</div>
 	)
 }
@@ -410,6 +613,7 @@ function Pagination({page,pagination,onPageChange}){
 					<ChevronRight size={15}/>
 				</button>
 			</div>
+			
 		</div>
 	)
 }

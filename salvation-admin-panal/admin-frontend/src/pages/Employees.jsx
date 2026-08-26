@@ -40,9 +40,11 @@ const [employmentModal,setEmploymentModal] = useState(false)
 const [savingEmployment,setSavingEmployment] = useState(false)
 
 const [employmentForm,setEmploymentForm] = useState({
- designation:"",
- dateOfJoining:"",
- dateOfBirth:""
+  fullName:"",
+  mobile:"",
+  designation:"",
+  dateOfJoining:"",
+  dateOfBirth:""
 })
 
 const [pagination,setPagination]=useState({
@@ -93,25 +95,28 @@ setNewThisMonthCount(
 		setLoading(false)
 	}
 }
-const openEmploymentModal=(emp)=>{
- setSelectedEmp(emp)
+const openEmploymentModal = (emp) => {
+  setSelectedEmp(emp)
 
- setEmploymentForm({
-  designation:emp.designation || "",
-  dateOfJoining: emp.dateOfJoining
- ? new Date(emp.dateOfJoining)
-     .toISOString()
-     .split("T")[0]
- : "",
+  setEmploymentForm({
+    fullName: emp.fullName || "",
+    mobile: emp.mobile || emp.loginMobile || "",
+    designation: emp.designation || "",
 
-dateOfBirth: emp.dateOfBirth
- ? new Date(emp.dateOfBirth)
-     .toISOString()
-     .split("T")[0]
- : ""
- })
+    dateOfJoining: emp.dateOfJoining
+      ? new Date(emp.dateOfJoining)
+          .toISOString()
+          .split("T")[0]
+      : "",
 
- setEmploymentModal(true)
+    dateOfBirth: emp.dateOfBirth
+      ? new Date(emp.dateOfBirth)
+          .toISOString()
+          .split("T")[0]
+      : ""
+  })
+
+  setEmploymentModal(true)
 }
 // const handleExport = async()=>{
 
@@ -179,30 +184,77 @@ const handleExport = async () => {
     setExporting(false)
   }
 }
-const saveEmploymentDetails = async()=>{
- try{
+const saveEmploymentDetails = async () => {
+  try {
+    setSavingEmployment(true)
 
-  setSavingEmployment(true)
+    const payload = {}
 
-  await updateEmploymentDetails(
-   selectedEmp._id,
-   employmentForm
-  )
+    // Only send fields that were actually changed
+    if (employmentForm.fullName !== (selectedEmp.fullName || "")) {
+      payload.fullName = employmentForm.fullName.trim()
+    }
 
-  await fetchEmployees(page)
+    const oldMobile = selectedEmp.mobile || selectedEmp.loginMobile || ""
 
-  setEmploymentModal(false)
+    if (employmentForm.mobile !== oldMobile) {
+      payload.mobile = employmentForm.mobile.trim()
+      payload.loginMobile = employmentForm.mobile.trim()
+    }
 
- }catch(err){
-  console.log(err)
-  alert(
-   err.response?.data?.message ||
-   "Failed to save details"
-  )
- }finally{
-  setSavingEmployment(false)
- }
+    if (employmentForm.designation !== (selectedEmp.designation || "")) {
+      payload.designation = employmentForm.designation.trim()
+    }
+
+    const oldJoiningDate = selectedEmp.dateOfJoining
+      ? new Date(selectedEmp.dateOfJoining)
+          .toISOString()
+          .split("T")[0]
+      : ""
+
+    if (employmentForm.dateOfJoining !== oldJoiningDate) {
+      payload.dateOfJoining =
+        employmentForm.dateOfJoining || null
+    }
+
+    const oldBirthDate = selectedEmp.dateOfBirth
+      ? new Date(selectedEmp.dateOfBirth)
+          .toISOString()
+          .split("T")[0]
+      : ""
+
+    if (employmentForm.dateOfBirth !== oldBirthDate) {
+      payload.dateOfBirth =
+        employmentForm.dateOfBirth || null
+    }
+
+    // Nothing changed
+    if (Object.keys(payload).length === 0) {
+      alert("No changes to update")
+      return
+    }
+
+    await updateEmploymentDetails(
+      selectedEmp._id,
+      payload
+    )
+
+    await fetchEmployees(page)
+
+    setEmploymentModal(false)
+
+  } catch (err) {
+    console.log(err)
+
+    alert(
+      err.response?.data?.message ||
+      "Failed to save details"
+    )
+  } finally {
+    setSavingEmployment(false)
+  }
 }
+
  const openDeleteModal=(emp)=>{
   setSelectedEmp(emp)
   setDeleteReason("")
@@ -597,102 +649,168 @@ const formatTime = (date) => {
     </div>
    )}
 {employmentModal && selectedEmp && (
- <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+  <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
 
-  <div className="bg-white w-full max-w-md rounded-2xl p-6">
+    <div className="bg-white w-full max-w-md rounded-2xl p-6 shadow-xl">
 
-   <div className="flex justify-between items-center mb-5">
-    <h2 className="text-lg font-semibold">
-      Employment Details
-    </h2>
+      {/* HEADER */}
+      <div className="flex justify-between items-center mb-5">
 
-    <button
-      onClick={()=>setEmploymentModal(false)}
-    >
-      <X size={18}/>
-    </button>
-   </div>
+        <div>
+          <h2 className="text-lg font-semibold text-gray-800">
+            Edit Employee Details
+          </h2>
 
-   <div className="space-y-4">
+          <p className="text-xs text-gray-500 mt-1">
+            Update only the information you want to change
+          </p>
+        </div>
 
-    <div>
-      <label className="text-sm font-medium">
-        Designation
-      </label>
+        <button
+          onClick={() => setEmploymentModal(false)}
+          className="p-2 hover:bg-gray-100 rounded-lg"
+        >
+          <X size={18} />
+        </button>
 
-      <input
-        type="text"
-        value={employmentForm.designation}
-        onChange={(e)=>
-          setEmploymentForm(prev=>({
-            ...prev,
-            designation:e.target.value
-          }))
-        }
-        className="w-full border rounded-lg p-2 mt-1"
-      />
+      </div>
+
+      <div className="space-y-4">
+
+        {/* FULL NAME */}
+        <div>
+          <label className="text-sm font-medium text-gray-700">
+            Employee Name
+          </label>
+
+          <input
+            type="text"
+            value={employmentForm.fullName}
+            onChange={(e) =>
+              setEmploymentForm(prev => ({
+                ...prev,
+                fullName: e.target.value
+              }))
+            }
+            placeholder="Enter employee name"
+            className="w-full border rounded-lg p-2 mt-1 outline-none focus:ring-2 focus:ring-[#0F2747]"
+          />
+        </div>
+
+        {/* MOBILE */}
+        <div>
+          <label className="text-sm font-medium text-gray-700">
+            Mobile Number
+          </label>
+
+          <input
+            type="text"
+            inputMode="numeric"
+            maxLength={10}
+            value={employmentForm.mobile}
+            onChange={(e) => {
+              const value = e.target.value
+                .replace(/\D/g, "")
+                .slice(0, 10)
+
+              setEmploymentForm(prev => ({
+                ...prev,
+                mobile: value
+              }))
+            }}
+            placeholder="Enter 10 digit mobile number"
+            className="w-full border rounded-lg p-2 mt-1 outline-none focus:ring-2 focus:ring-[#0F2747]"
+          />
+
+          <p className="text-xs text-gray-400 mt-1">
+            This will also update the login mobile number.
+          </p>
+        </div>
+
+        {/* DESIGNATION */}
+        <div>
+          <label className="text-sm font-medium text-gray-700">
+            Designation
+          </label>
+
+          <input
+            type="text"
+            value={employmentForm.designation}
+            onChange={(e) =>
+              setEmploymentForm(prev => ({
+                ...prev,
+                designation: e.target.value
+              }))
+            }
+            placeholder="Enter designation"
+            className="w-full border rounded-lg p-2 mt-1 outline-none focus:ring-2 focus:ring-[#0F2747]"
+          />
+        </div>
+
+        {/* DATE OF JOINING */}
+        <div>
+          <label className="text-sm font-medium text-gray-700">
+            Date Of Joining
+          </label>
+
+          <input
+            type="date"
+            value={employmentForm.dateOfJoining}
+            onChange={(e) =>
+              setEmploymentForm(prev => ({
+                ...prev,
+                dateOfJoining: e.target.value
+              }))
+            }
+            className="w-full border rounded-lg p-2 mt-1 outline-none focus:ring-2 focus:ring-[#0F2747]"
+          />
+        </div>
+
+        {/* DATE OF BIRTH */}
+        <div>
+          <label className="text-sm font-medium text-gray-700">
+            Date Of Birth
+          </label>
+
+          <input
+            type="date"
+            value={employmentForm.dateOfBirth}
+            onChange={(e) =>
+              setEmploymentForm(prev => ({
+                ...prev,
+                dateOfBirth: e.target.value
+              }))
+            }
+            className="w-full border rounded-lg p-2 mt-1 outline-none focus:ring-2 focus:ring-[#0F2747]"
+          />
+        </div>
+
+      </div>
+
+      {/* FOOTER */}
+      <div className="flex justify-end gap-3 mt-6">
+
+        <button
+          onClick={() => setEmploymentModal(false)}
+          disabled={savingEmployment}
+          className="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50"
+        >
+          Cancel
+        </button>
+
+        <button
+          onClick={saveEmploymentDetails}
+          disabled={savingEmployment}
+          className="px-4 py-2 bg-[#0F2747] text-white rounded-lg disabled:opacity-50"
+        >
+          {savingEmployment ? "Saving..." : "Save Changes"}
+        </button>
+
+      </div>
+
     </div>
-
-    <div>
-      <label className="text-sm font-medium">
-        Date Of Joining
-      </label>
-
-      <input
-        type="date"
-        value={employmentForm.dateOfJoining}
-        onChange={(e)=>
-          setEmploymentForm(prev=>({
-            ...prev,
-            dateOfJoining:e.target.value
-          }))
-        }
-        className="w-full border rounded-lg p-2 mt-1"
-      />
-    </div>
-
-    <div>
-      <label className="text-sm font-medium">
-        Date Of Birth
-      </label>
-
-      <input
-        type="date"
-        value={employmentForm.dateOfBirth}
-        onChange={(e)=>
-          setEmploymentForm(prev=>({
-            ...prev,
-            dateOfBirth:e.target.value
-          }))
-        }
-        className="w-full border rounded-lg p-2 mt-1"
-      />
-    </div>
-
-   </div>
-
-   <div className="flex justify-end gap-3 mt-6">
-
-    <button
-      onClick={()=>setEmploymentModal(false)}
-      className="px-4 py-2 bg-gray-100 rounded-lg"
-    >
-      Cancel
-    </button>
-
- <button
- onClick={saveEmploymentDetails}
- disabled={savingEmployment}
- className="px-4 py-2 bg-[#0F2747] text-white rounded-lg disabled:opacity-50"
->
- {savingEmployment ? "Saving..." : "Save"}
-</button>
-
-   </div>
 
   </div>
-
- </div>
 )}
   </div>
  )

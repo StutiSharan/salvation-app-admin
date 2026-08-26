@@ -302,38 +302,87 @@ const skip = (page - 1) * limit
 		})
 	}
 }
-exports.updateEmploymentDetails = async(req,res)=>{
- try{
+exports.updateEmploymentDetails = async (req, res) => {
+  try {
+    const {
+      fullName,
+      mobile,
+      designation,
+      dateOfJoining,
+      dateOfBirth
+    } = req.body;
 
-  const {
-   designation,
-   dateOfJoining,
-   dateOfBirth
-  } = req.body
+    // Validate mobile
+    if (mobile && !/^\d{10}$/.test(mobile)) {
+      return res.status(400).json({
+        success: false,
+        message: "Mobile number must contain exactly 10 digits"
+      });
+    }
 
-  const employee = await Employee.findByIdAndUpdate(
-   req.params.id,
-   {
-    designation,
-    dateOfJoining,
-    dateOfBirth
-   },
-   { new:true }
-  )
+    // Check if another employee already uses this login mobile
+    if (mobile) {
+      const existingEmployee = await Employee.findOne({
+        loginMobile: mobile,
+        _id: { $ne: req.params.id }
+      });
 
-  res.json({
-   success:true,
-   employee
-  })
+      if (existingEmployee) {
+        return res.status(409).json({
+          success: false,
+          message: "This mobile number is already registered with another employee"
+        });
+      }
+    }
 
- }catch(err){
-  console.log(err)
+    const updateData = {
+      fullName,
+      mobile,
+      loginMobile: mobile,
+      designation,
+      dateOfJoining,
+      dateOfBirth
+    };
 
-  res.status(500).json({
-   message:"Failed to update employee details"
-  })
- }
-}
+    const employee = await Employee.findByIdAndUpdate(
+      req.params.id,
+      updateData,
+      {
+        new: true,
+        runValidators: true
+      }
+    );
+
+    if (!employee) {
+      return res.status(404).json({
+        success: false,
+        message: "Employee not found"
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: "Employee details updated successfully",
+      employee
+    });
+
+  } catch (err) {
+    console.error("❌ Update employee error:", err);
+
+    // MongoDB duplicate key
+    if (err.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message: "This mobile number is already registered"
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to update employee details"
+    });
+  }
+};
 exports.restoreLeaveEmployee=async(req,res)=>{
 	try{
 		const {id}=req.params

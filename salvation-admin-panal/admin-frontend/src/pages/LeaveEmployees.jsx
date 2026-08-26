@@ -7,6 +7,9 @@ export default function LeaveEmployees(){
 	const [loading,setLoading]=useState(true)
 	const [page,setPage]=useState(1)
 	const [exporting,setExporting] = useState(false)
+	const [restoreModal, setRestoreModal] = useState(false)
+const [selectedEmployee, setSelectedEmployee] = useState(null)
+const [restoring, setRestoring] = useState(false)
 	const [pagination,setPagination]=useState({
 		total:0,
 		page:1,
@@ -66,34 +69,45 @@ const handleExport = async()=>{
 		}
 	}
 
-	const restoreEmployee=async(id)=>{
-		try{
-			const token=localStorage.getItem("adminToken")
+	const restoreEmployee = async () => {
+  if (!selectedEmployee) return
 
-			const res=await fetch(
-				`${import.meta.env.VITE_API_URL}/employees/leave/${id}/restore`,
-				{
-					method:"POST",
-					headers:{
-						Authorization:`Bearer ${token}`,
-						"Content-Type":"application/json"
-					}
-				}
-			)
+  try {
+    setRestoring(true)
 
-			const result=await res.json()
+    const token = localStorage.getItem("adminToken")
 
-			if(result.success){
-				alert("Employee restored successfully")
-				fetchLeaveEmployees(page)
-			}else{
-				alert(result.message)
-			}
-		}catch(err){
-			console.error(err)
-			alert("Restore failed")
-		}
-	}
+    const res = await fetch(
+      `${import.meta.env.VITE_API_URL}/employees/leave/${selectedEmployee._id}/restore`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
+      }
+    )
+
+    const result = await res.json()
+
+    if (result.success) {
+      alert("Employee restored successfully")
+
+      setRestoreModal(false)
+      setSelectedEmployee(null)
+
+      fetchLeaveEmployees(page)
+    } else {
+      alert(result.message || "Restore failed")
+    }
+
+  } catch (err) {
+    console.error(err)
+    alert("Restore failed")
+  } finally {
+    setRestoring(false)
+  }
+}
 
 	useEffect(()=>{
 		fetchLeaveEmployees(page)
@@ -123,11 +137,14 @@ const handleExport = async()=>{
 			key:"action",
 			render:(row)=>(
 				<button
-					onClick={()=>restoreEmployee(row._id)}
-					className="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-xs"
-				>
-					Restore
-				</button>
+  onClick={() => {
+    setSelectedEmployee(row)
+    setRestoreModal(true)
+  }}
+  className="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-xs"
+>
+  Restore
+</button>
 			)
 		}
 	]
@@ -216,6 +233,87 @@ const handleExport = async()=>{
 </div>
 				</>
 			)}
+
+			{restoreModal && selectedEmployee && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+
+    <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6">
+
+      {/* HEADER */}
+      <div className="flex items-center gap-3 mb-4">
+
+        <div className="w-11 h-11 rounded-full bg-green-100 flex items-center justify-center">
+          <span className="text-green-600 text-xl">
+            ↻
+          </span>
+        </div>
+
+        <div>
+          <h2 className="text-lg font-semibold text-gray-800">
+            Restore Employee?
+          </h2>
+
+          <p className="text-sm text-gray-500">
+            Confirm employee restoration
+          </p>
+        </div>
+
+      </div>
+
+      {/* EMPLOYEE DETAILS */}
+      <div className="bg-gray-50 border rounded-xl p-4 mb-5">
+
+        <p className="text-sm text-gray-500">
+          Employee ID
+        </p>
+
+        <p className="font-semibold text-[#0F2747] mb-3">
+          {selectedEmployee.employeeId}
+        </p>
+
+        <p className="text-sm text-gray-500">
+          Employee Name
+        </p>
+
+        <p className="font-semibold text-gray-800">
+          {selectedEmployee.fullName}
+        </p>
+
+      </div>
+
+      <p className="text-sm text-gray-600 mb-6">
+        Are you sure you want to restore this employee?
+        The employee will be moved back to the active employee list.
+      </p>
+
+      {/* BUTTONS */}
+      <div className="flex justify-end gap-3">
+
+        <button
+          onClick={() => {
+            setRestoreModal(false)
+            setSelectedEmployee(null)
+          }}
+          disabled={restoring}
+          className="px-5 py-2.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+        >
+          Cancel
+        </button>
+
+        <button
+          onClick={restoreEmployee}
+          disabled={restoring}
+          className="px-5 py-2.5 rounded-lg bg-green-600 hover:bg-green-700 text-white disabled:opacity-50"
+        >
+          {restoring ? "Restoring..." : "Yes, Restore"}
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+)}
 		</div>
 	)
 }

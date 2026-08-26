@@ -46,7 +46,14 @@ export const getCandidates = (page = 1, search = "") => {
     `/candidates?page=${page}&search=${encodeURIComponent(search)}`
   )
 }
+export const updateCandidate = async (id, data) => {
+  if (!tokenCheck()) return;
 
+  return axios.put(
+    `/candidates/${id}`,
+    data
+  );
+};
 /*
 ==============================
  DOCUMENT UPLOAD

@@ -45,3 +45,73 @@ const skip = (page - 1) * limit
     })
   }
 }
+
+exports.updateCandidate = async (req, res) => {
+  try {
+    const { fullName, mobile } = req.body
+
+    const update = {}
+
+    // Update name only if provided
+    if (fullName !== undefined) {
+      if (!fullName.trim()) {
+        return res.status(400).json({
+          success: false,
+          message: "Name cannot be empty"
+        })
+      }
+
+      update.fullName = fullName.trim()
+    }
+
+    // Validate mobile ONLY when mobile is being updated
+    if (mobile !== undefined) {
+      const cleanMobile = mobile.trim()
+
+      if (!/^\d{10}$/.test(cleanMobile)) {
+        return res.status(400).json({
+          success: false,
+          message: "Mobile number must contain exactly 10 digits"
+        })
+      }
+
+      update.mobile = cleanMobile
+    }
+
+    if (Object.keys(update).length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No fields provided for update"
+      })
+    }
+
+    const candidate = await Candidate.findByIdAndUpdate(
+      req.params.id,
+      { $set: update },
+      {
+        new: true
+      }
+    )
+
+    if (!candidate) {
+      return res.status(404).json({
+        success: false,
+        message: "Candidate not found"
+      })
+    }
+
+    return res.json({
+      success: true,
+      message: "Candidate updated successfully",
+      candidate
+    })
+
+  } catch (err) {
+    console.log("Update candidate error:", err)
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to update candidate"
+    })
+  }
+}
