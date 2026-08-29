@@ -22,9 +22,16 @@ export const signupAdmin=(data)=>{
 ==============================
 */
 
-export const getEmployees=(page=1)=>{
-	if(!tokenCheck()) return
-	return axios.get(`/employees?page=${page}`)
+// export const getEmployees=(page=1)=>{
+// 	if(!tokenCheck()) return
+// 	return axios.get(`/employees?page=${page}`)
+// }
+export const getEmployees = (page = 1, search = "") => {
+  if (!tokenCheck()) return
+
+  return axios.get(
+    `/employees?page=${page}&search=${encodeURIComponent(search)}`
+  )
 }
 
 export const createEmployee=(data)=>{

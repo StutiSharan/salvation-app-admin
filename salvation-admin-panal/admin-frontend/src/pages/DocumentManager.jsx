@@ -29,23 +29,49 @@ const [refreshing,setRefreshing]=useState(false)
 
 useEffect(()=>{loadEmployees()},[])
 
-/* ================= LOAD EMPLOYEES ================= */
-const loadEmployees=async()=>{
-	const res=await getEmployees(1)
-	setEmployees(res.data.data || [])
+const loadEmployees = async (searchValue = "") => {
+  try {
+    const res = await getEmployees(1, searchValue)
+
+    setEmployees(res.data.data || [])
+  } catch (err) {
+    console.error("Failed to load employees:", err)
+    toast.error("Failed to load employees")
+  }
 }
 
 /* ================= SEARCH ================= */
 
-const handleSearch=()=>{
-	const list=Array.isArray(employees)?employees:[]
+const handleSearch = async () => {
+  const value = search.trim()
 
-	const emp=list.find(
-		e=>e.employeeId?.toLowerCase()===search.trim().toLowerCase()
-	)
+  if (!value) {
+    setEmployee(null)
+    await loadEmployees("")
+    return
+  }
 
-	if(!emp) return toast.error("Employee not found")
-	setEmployee(emp)
+  try {
+    const res = await getEmployees(1, value)
+
+    const list = res.data.data || []
+
+    const emp = list.find(
+      e =>
+        e.employeeId?.toLowerCase() === value.toLowerCase()
+    )
+
+    if (!emp) {
+      setEmployee(null)
+      toast.error("Employee not found")
+      return
+    }
+
+    setEmployee(emp)
+  } catch (err) {
+    console.error("Search employee error:", err)
+    toast.error("Search failed")
+  }
 }
 /* ================= REFRESH DOCUMENTS ONLY ================= */
 
@@ -54,9 +80,8 @@ const refreshDocuments=async()=>{
 
 	try{
 		setRefreshing(true)
-
-		const res=await getEmployees(1)
-		const updatedEmployees=res.data.data || []
+const res = await getEmployees(1, search)
+const updatedEmployees = res.data.data || []
 		setEmployees(updatedEmployees)
 
 		const updatedEmployee=updatedEmployees.find(
