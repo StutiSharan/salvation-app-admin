@@ -197,7 +197,7 @@ Document Manager
 
 <button
  onClick={handleSearch}
- className="bg-blue-600 text-white px-6 py-2 rounded-lg flex items-center justify-center gap-2"
+ className="bg-blue-600 text-white px-6 py-2 rounded-lg flex items-center justify-center gap-2 cursor-pointer hover:bg-blue-800"
 >
 <Search size={18}/> Search
 </button>
@@ -249,7 +249,7 @@ Refresh
 {/* DOCUMENT GRID */}
 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
 
-{tab==="employee" &&
+{/* {tab==="employee" &&
 Object.entries(employee.employeeUploads).map(([name,key])=>{
  if(!key) return null
  return(
@@ -263,9 +263,55 @@ Object.entries(employee.employeeUploads).map(([name,key])=>{
  />
  )
 })
-}
+} */}
+{tab === "employee" && (
+  <>
+    {/* PROFILE PHOTO */}
+    {employee.profilePhoto && (
+      <DocCard
+        key="profilePhoto"
+        name="Profile Photo"
+        onPreview={() => openPreview(employee.profilePhoto)}
+        onDownload={() => download(employee.profilePhoto)}
+        onDelete={() => deleteDoc("profilePhoto", "profilePhoto")}
+        onReplace={(file) =>
+          replaceDoc(file, "profilePhoto", "profilePhoto")
+        }
+      />
+    )}
 
-{tab==="company" && (
+    {/* EMPLOYEE DOCUMENTS */}
+    {Object.entries(employee.employeeUploads || {}).map(
+      ([name, key]) => {
+        if (!key) return null
+
+        const labels = {
+          aadhaar: "Aadhaar",
+          pan: "PAN",
+          bankPassbook: "Bank Passbook",
+          marksheet10: "10th Marksheet",
+          marksheet12: "12th Marksheet",
+          graduation: "Graduation",
+          experience: "Experience"
+        }
+
+        return (
+          <DocCard
+            key={name}
+            name={labels[name] || name}
+            onPreview={() => openPreview(key)}
+            onDownload={() => download(key)}
+            onDelete={() => deleteDoc("employee", name)}
+            onReplace={(file) =>
+              replaceDoc(file, "employee", name)
+            }
+          />
+        )
+      }
+    )}
+  </>
+)}
+{/* {tab==="company" && (
 <>
 {Object.entries(employee.companyUploads).map(([name,value])=>{
  if(name==="salarySlips") return null
@@ -291,8 +337,56 @@ Object.entries(employee.employeeUploads).map(([name,key])=>{
  onReplace={(file,slip)=>replaceDoc(file,"salary","salarySlip",{month:slip.month,year:slip.year})}
 />
 </>
-)}
+)} */}
+{tab === "company" && (
+  <>
+    {Object.entries(employee.companyUploads || {}).map(
+      ([name, value]) => {
 
+        if (name === "salarySlips") return null
+        if (!value) return null
+
+        const labels = {
+          offerLetter: "Offer Letter",
+          appointmentLetter: "Appointment Letter",
+          uanLetter: "UAN Letter",
+          esicSlip: "ESIC Slip"
+        }
+
+        return (
+          <DocCard
+            key={name}
+            name={labels[name] || name}
+            onPreview={() => openPreview(value)}
+            onDownload={() => download(value)}
+            onDelete={() => deleteDoc("company", name)}
+            onReplace={(file) =>
+              replaceDoc(file, "company", name)
+            }
+          />
+        )
+      }
+    )}
+
+    <SalarySlipManager
+      salarySlips={employee.companyUploads?.salarySlips || []}
+      onPreview={openPreview}
+      onDownload={download}
+      onDelete={(slip) =>
+        deleteDoc("salary", "salarySlip", {
+          month: slip.month,
+          year: slip.year
+        })
+      }
+      onReplace={(file, slip) =>
+        replaceDoc(file, "salary", "salarySlip", {
+          month: slip.month,
+          year: slip.year
+        })
+      }
+    />
+  </>
+)}
 </div>
 </div>
 )}
@@ -322,13 +416,13 @@ return(
 <h4 className="font-semibold capitalize mb-3">{name}</h4>
 
 <div className="flex flex-wrap gap-2">
-<button onClick={onPreview} className="flex-1 bg-blue-600 text-white py-1 rounded">Preview</button>
-<button onClick={onDownload} className="bg-green-500 text-white p-2 rounded"><Download size={16}/></button>
-<label className="bg-yellow-500 text-white p-2 rounded cursor-pointer">
+<button onClick={onPreview} className="flex-1 bg-blue-600 text-white py-1 cursor-pointer hover:bg-blue-800 rounded">Preview</button>
+<button onClick={onDownload} className="bg-green-500 text-white cursor-pointer hover:bg-green-700 p-2 rounded"><Download size={16}/></button>
+<label className="bg-yellow-500 text-white p-2 rounded hover:bg-yellow-600 cursor-pointer">
 <Pencil size={16}/>
 <input type="file" hidden onChange={(e)=>onReplace(e.target.files[0])}/>
 </label>
-<button onClick={onDelete} className="bg-red-500 text-white p-2 rounded"><Trash2 size={16}/></button>
+<button onClick={onDelete} className="bg-red-500 text-white p-2 cursor-pointer hover:bg-red-700 rounded"><Trash2 size={16}/></button>
 </div>
 </div>
 )
